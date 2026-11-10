@@ -58,6 +58,7 @@ select{font:inherit;border:2px solid #fff;border-radius:5px;background:#36438a;c
 h1{text-align:center;font-weight:400;font-size:34px;margin:30px 0 4px;color:#ffe9a8;text-shadow:0 3px 0 #10153a}
 #toast{position:fixed;left:50%;top:14%;transform:translateX(-50%);background:rgba(16,21,58,.95);border:2px solid #fff;color:#fff;padding:8px 14px;border-radius:6px;font-size:14px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:20;max-width:90%;text-align:center}
 #toast.on{opacity:1}
+.legend{font-size:12px;color:#c3cbf0;margin:4px 2px 0;text-align:center}.legend i{font-style:normal;color:#1a1a1a;display:inline-block;width:15px;text-align:center;border-radius:3px;margin:0 2px 0 6px}.legend b{font-weight:400;color:#fff}
 .foot{text-align:center;font-size:12px;color:#9aa6e0;margin-top:8px}
 </style>
 </head>
@@ -66,7 +67,7 @@ h1{text-align:center;font-weight:400;font-size:34px;margin:30px 0 4px;color:#ffe
 <div id="toast"></div>
 <script>
 // ================= 기본 데이터 =================
-const W=360,H=440,MONTH=20,DAY0=540,DAY1=1080;
+const W=360,MONTH=20,DAY0=540,DAY1=1080;
 const PRICE={modal:1000,shock:50000,manual:100000};
 const BASE={modal:10,shock:10,manual:30};
 const EXPG={modal:1,shock:3,manual:6};
@@ -113,7 +114,11 @@ const beds=lv=>Math.min(12,3+Math.floor(lv/3)+((S&&S.mbeds)||0));
 const lvCost=lv=>Math.round(2000000*Math.pow(1.7,lv-1)/100000)*100000;
 const maxHp=s=>60+s.st.hp*8;
 const expNeed=s=>20+s.lv*15;
-let uid=1;
+let uid=1,H=440,O=0;
+const tier=()=>S.level<=3?0:S.level<=6?1:S.level<=9?2:3;
+const seatRows=()=>3+Math.floor((S.level-1)/3),seatCols=()=>S.level>=5?5:4,seatN=()=>seatRows()*seatCols();
+function seatPos(j){const c=seatCols();return[c===4?182+(j%4)*44:176+(j%5)*40,62+Math.floor(j/c)*24]}
+function setO(){O=(seatRows()-3)*24;H=440+O}
 function mkStaff(role,st){
   const s={id:uid++,name:rname(),role,st:st||{hp:ri(2,5),res:ri(2,5),mental:ri(2,5),skill:ri(2,5)},lv:1,exp:0,pts:0,stress:ri(0,10),lunch:720,earn:0,
     look:{skin:pick(SKIN),hair:pick(HAIR),hs:r(3),top:role==='mgr'?'#3e5a8a':pick(['#5fb08a','#6fa8dc','#e891b0','#7fc4c0']),pants:'#3d4b5c'}};
@@ -142,7 +147,7 @@ function dayCount(){return Math.round((20+S.level*10+(S.regs?S.regs.length/3:0))
 function monthDay(d){return{m:Math.floor((d-1)/MONTH)+1,d:(d-1)%MONTH+1}}
 
 function startDay(){
-  ac();
+  ac();setO();
   const n=dayCount();
   D={t:DAY0,pats:[],pid:1,boss:null,bossAt:(S.day>=2&&Math.random()<.35)?ri(600,960):null,rev:0,served:0,lost:0,lambda:n/510,count:n,fx:[],msg:[],satStart:S.sat};
   const pts=S.staff.filter(s=>s.role==='pt');
@@ -156,25 +161,26 @@ function startDay(){
 
 // ================= 위치 =================
 function dest(s){return s.moveTo||s.loc}
-function roomInfo(loc){const k=+loc.replace(/\D/g,'');return{k,y0:loc.startsWith('shock')?206:286}}
+function roomInfo(loc){const k=+loc.replace(/\D/g,'');return{k,y0:(loc.startsWith('shock')?206:286)+O}}
 function spotOf(s,L){
   const same=S.staff.filter(x=>dest(x)===L);const i=Math.max(0,same.indexOf(s));
   if(L==='recep')return[50+i*28,56];
-  if(L==='modal'){if(s.task&&s.loc==='modal'){const p=D.pats.find(q=>q.id===s.task);if(p)return[p.tx-16,p.ty+4]}return[20,140+i*20]}
+  if(L==='modal'){if(s.task&&s.loc==='modal'){const p=D.pats.find(q=>q.id===s.task);if(p)return[p.tx-16,p.ty+4]}return[20,140+O+i*20]}
   if(L.startsWith('shock')||L.startsWith('manual')){const{k,y0}=roomInfo(L);return s.task&&s.loc===L?[k*90+30,y0+60]:[k*90+16,y0+46]}
-  if(L==='rest')return[18+(i%7)*22,410+Math.floor(i/7)*16];
-  if(L==='boss')return[200+(i%7)*20,430];
+  if(L==='rest')return[18+(i%7)*22,410+O+Math.floor(i/7)*16];
+  if(L==='boss')return[200+(i%7)*20,430+O];
   return[s.x,s.y];
 }
-function bedPos(i,n){const two=n>6,per=two?Math.ceil(n/2):n,row=two?Math.floor(i/per):0;return[56+(i%per)*Math.floor(296/per),two?150+row*30:160]}
+function bedPos(i,n){const two=n>6,per=two?Math.ceil(n/2):n,row=two?Math.floor(i/per):0;return[56+(i%per)*Math.floor(296/per),(two?150+row*30:160)+O]}
 function layoutPatients(){
   const q=D.pats.filter(p=>p.stage==='recep'||p.stage==='reg').sort((a,b)=>a.id-b.id);
-  q.forEach((p,i)=>{if(i<7){p.tx=60+i*16;p.ty=106}else{p.tx=176+((i-7)%8)*20;p.ty=122}});
+  const sy=50+seatRows()*24;let st=0;
+  q.forEach((p,i)=>{p.stand=false;if(i<7){p.tx=60+i*16;p.ty=106}else{p.tx=176+(st%9)*20;p.ty=sy;st++;p.stand=true}});
   const w=D.pats.filter(p=>p.stage==='qmodal'||p.stage==='qshock'||p.stage==='qmanual').sort((a,b)=>a.qAt-b.qAt);
-  w.forEach((p,j)=>{if(j<12){p.tx=182+(j%4)*44;p.ty=62+Math.floor(j/4)*24}else{p.tx=170+((j-12)%9)*20;p.ty=122}});
+  const ns=seatN();w.forEach((p,j)=>{if(j<ns){[p.tx,p.ty]=seatPos(j);p.stand=false}else{p.tx=176+(st%9)*20;p.ty=sy;st++;if(!p.stand){p.stand=true;if(Math.random()<.3)bub(p,'앉을 데가 없네…')}}});
   const nb=beds(S.level);let extra=0;
   for(const p of D.pats){
-    if(p.stage==='msetup'||p.stage==='modal'){if(p.bed>=0&&p.bed<nb){const[x,y]=bedPos(p.bed,nb);p.tx=x+12;p.ty=y+6}else{p.tx=340-(extra%10)*18;p.ty=200;extra++}}
+    if(p.stage==='msetup'||p.stage==='modal'||p.stage==='mdone'){if(p.bed>=0&&p.bed<nb){const[x,y]=bedPos(p.bed,nb);p.tx=x+12;p.ty=y+6}else{p.tx=340-(extra%10)*18;p.ty=200+O;extra++}}
     if(p.stage==='tshock'||p.stage==='tmanual'){const{k,y0}=roomInfo((p.stage==='tshock'?'shock':'manual')+p.room);p.tx=k*90+52;p.ty=y0+52}
     if(p.stage==='exit'){p.tx=-24;p.ty=112}
   }
@@ -246,7 +252,7 @@ function addExp(s,n){s.exp+=n;while(s.exp>=expNeed(s)){s.exp-=expNeed(s);s.lv++;
 function speedF(s){return(1.2-s.st.skill*.04)*(s.curHp<maxHp(s)*.3?1.3:1)}
 function credit(s,kind){const pr=PRICE[kind];S.money+=pr;D.rev+=pr;S.monthRev+=pr;if(s){s.earn+=pr*.1}}
 function resign(s,why){
-  if(s.task){const p=D&&D.pats.find(q=>q.id===s.task);if(p){if(p.stage==='reg')p.stage='recep';else if(p.stage==='msetup'){p.stage='qmodal';p.bed=-1}else if(p.stage[0]==='t'){p.stage='q'+p.stage.slice(1)}p.qAt=D.t}}
+  if(s.task){const p=D&&D.pats.find(q=>q.id===s.task);if(p){if(p.stage==='reg')p.stage='recep';else if(p.stage==='msetup'){p.stage='qmodal';p.bed=-1}else if(p.stage==='mdone'){p.rmBy=null}else if(p.stage[0]==='t'){p.stage='q'+p.stage.slice(1)}p.qAt=D.t}}
   S.staff=S.staff.filter(x=>x!==s);if(sel===s.id)sel=null;
   let m;
   if(Math.random()<.5&&S.money>0){const a=Math.round(S.money*.3);S.money-=a;m=`💸 ${s.name} 퇴사! 현금 ${won(a)}을 챙겨 갔어요.`}
@@ -277,12 +283,12 @@ function tick(dt){
   if(Math.random()<dt/25)chatter();
   if(D.bossAt&&D.t>=D.bossAt&&!D.boss){
     const b=BOSSES[r(Math.min(4,1+Math.floor(S.day/3)))],hp=b.hp+S.day*15;
-    D.boss={...b,hp,max:hp,left:120,x:380,y:405,tx:292,ty:410,walk:0,bub:null,lineCd:0};D.bossAt=null;
+    D.boss={...b,hp,max:hp,left:120,x:380,y:405+O,tx:292,ty:410+O,walk:0,bub:null,lineCd:0};D.bossAt=null;
     sfx('boss');say('【경보】',`🚨 진상 환자 「${b.name}」 등장! 약점: ${STN[b.weak]}. 선생님들을 민원 상담실로 보내세요!`);
   }
   layoutPatients();
   const cnt={modal:0,shock:0,manual:0,recep:0};
-  for(const p of D.pats){if(p.stage==='recep')cnt.recep++;if(p.stage==='qmodal')cnt.modal++;if(p.stage==='qshock')cnt.shock++;if(p.stage==='qmanual')cnt.manual++}
+  for(const p of D.pats){if(p.stage==='recep')cnt.recep++;if(p.stage==='qmodal'||p.stage==='mdone')cnt.modal++;if(p.stage==='qshock')cnt.shock++;if(p.stage==='qmanual')cnt.manual++}
   for(const s of [...S.staff]){
     const Ld=dest(s);[s.tx,s.ty]=spotOf(s,Ld);
     const ok=step(s,dt);
@@ -300,17 +306,22 @@ function tick(dt){
     }
     if(s.loc==='recep'){
       const isM=s.role==='mgr';
-      if(s.task){s.taskLeft-=dt;if(s.taskLeft<=0){const p=D.pats.find(q=>q.id===s.task);s.task=null;if(p&&p.stage==='reg'){p.stage='qmodal';p.qAt=D.t;p.patience=Math.min(p.maxPat,p.patience+(isM?15:5));s.stress+=(isM?.4:.8)*(1.3-s.st.res*.06);addExp(s,1);if(!isM&&Math.random()<.15)bub(p,'접수가 좀 느리네…')}}}
+      if(s.task){s.taskLeft-=dt;if(s.taskLeft<=0){const p=D.pats.find(q=>q.id===s.task);s.task=null;if(p&&p.stage==='reg'){p.stage='qmodal';p.qAt=D.t;rxFor(p);p.patience=Math.min(p.maxPat,p.patience+(isM?15:5));if(Math.random()<.3)bub(s,'처방 나왔어요: '+['모달',...p.rx.map(k=>k==='shock'?'충격파':'도수')].join('→'));s.stress+=(isM?.4:.8)*(1.3-s.st.res*.06);addExp(s,1);if(!isM&&Math.random()<.15)bub(p,'접수가 좀 느리네…')}}}
       else{const p=D.pats.filter(q=>q.stage==='recep'&&arrived(q)).sort((a,b)=>a.id-b.id)[0];
         if(p){p.stage='reg';s.task=p.id;s.taskTot=s.taskLeft=2*speedF(s)*(isM?1:1.8);if(Math.random()<.25)bub(s,isM?pick(L.mgr):pick(['어… 접수 화면이 어디더라','잠시만요, 실장님 자리라서…','성함 다시 한 번만요!']))}
         else if(auto&&!isM)autoMove(s,cnt);}
       continue;
     }
     if(s.loc==='modal'){
-      if(s.task){const p=D.pats.find(q=>q.id===s.task);if(!p){s.task=null;continue}if(arrived(p)){s.taskLeft-=dt;if(s.taskLeft<=0){p.stage='modal';p.modalLeft=BASE.modal;s.task=null;gain(s,'modal')}}}
+      if(s.task){const p=D.pats.find(q=>q.id===s.task);if(!p||p.stage==='exit'){s.task=null;s.tk=null;continue}
+        if(arrived(p)&&arrived(s)){s.taskLeft-=dt;if(s.taskLeft<=0){
+          if(s.tk==='rm'){s.task=null;s.tk=null;credit(s,'modal');addExp(s,1);p.skills.push(s.st.skill);fx(p.x,p.y-20,'+1천','#ffe9a8');sfx('coin');next(p)}
+          else{p.stage='modal';p.modalLeft=BASE.modal;s.task=null;gain(s,'modal')}}}}
       else{
+        const dn=D.pats.filter(q=>q.stage==='mdone'&&!q.rmBy).sort((a,b)=>a.doneAt-b.doneAt)[0];
+        if(dn){dn.rmBy=s.id;s.task=dn.id;s.tk='rm';s.taskTot=s.taskLeft=.8*speedF(s);bub(s,pick(['패드 떼어 드릴게요~','수고하셨어요!','전기치료 끝났어요']));continue}
         const p=D.pats.filter(q=>q.stage==='qmodal').sort((a,b)=>a.qAt-b.qAt)[0];
-        let b=-1;if(p){const nb=beds(S.level),used=new Set(D.pats.filter(q=>(q.stage==='msetup'||q.stage==='modal')&&q.bed>=0).map(q=>q.bed));for(let i=0;i<nb;i++)if(!used.has(i)){b=i;break}}
+        let b=-1;if(p){const nb=beds(S.level),used=new Set(D.pats.filter(q=>(q.stage==='msetup'||q.stage==='modal'||q.stage==='mdone')&&q.bed>=0).map(q=>q.bed));for(let i=0;i<nb;i++)if(!used.has(i)){b=i;break}}
         if(p&&b>=0){
           p.stage='msetup';p.bed=b;p.mt=s.id;s.task=p.id;s.taskTot=s.taskLeft=1.5*speedF(s);if(Math.random()<.3)bub(s,pick(L.modal))}
         else if(auto)autoMove(s,cnt);
@@ -331,9 +342,10 @@ function tick(dt){
   }
   for(const p of D.pats){
     step(p,dt);
-    if(p.stage==='modal'){p.modalLeft-=dt;if(p.modalLeft<=0){const t=S.staff.find(x=>x.id===p.mt);credit(t,'modal');p.skills.push(t?t.st.skill:3);fx(p.x,p.y-24,'+1천','#ffe9a8');rxFor(p);next(p)}}
+    if(p.stage==='modal'){p.modalLeft-=dt;if(p.modalLeft<=0){p.stage='mdone';p.doneAt=D.t;p.rmBy=null;bub(p,pick(['선생님~ 다 끝났어요!','패드 떼주세요~','삐- 끝났대요!']))}}
+    else if(p.stage==='mdone'){p.patience-=dt*.5;p.waited+=dt*.5;if(p.patience<=0){p.rmBy=null;complain(p)}}
     else if(p.stage==='recep'||p.stage==='qmodal'||p.stage==='qshock'||p.stage==='qmanual'){
-      if(p.stage!=='recep'||arrived(p)){p.patience-=dt;p.waited+=dt}
+      if(p.stage!=='recep'||arrived(p)){p.patience-=dt*(p.stand?1.5:1);p.waited+=dt}
       if(p.patience<p.maxPat*.25&&!p.wl){p.wl=1;bub(p,pick(L.wait))}
       if(p.patience<=0)complain(p);
     }
@@ -352,10 +364,10 @@ function L_idle(){return L.idle}
 // ================= 조작 =================
 function areaAt(x,y){
   if(y<36)return null;
-  if(y<126)return x<150?'recep':null;
-  if(y<206)return'modal';
+  if(y<126+O)return x<150?'recep':null;
+  if(y<206+O)return'modal';
   const k=Math.min(3,Math.floor(x/90));
-  if(y<286)return'shock'+k;if(y<366)return'manual'+k;
+  if(y<286+O)return'shock'+k;if(y<366+O)return'manual'+k;
   return x<180?'rest':'boss';
 }
 function canvasTap(ev){
@@ -383,10 +395,11 @@ function useChance(){
   ac();
   if(D.boss){toast('🚫 원장님이 자리를 피하셨습니다');sfx('bad');return}
   if(S.chances<=0){toast('원장님 찬스를 다 썼어요');return}
-  S.chances--;
-  for(const p of D.pats)if(p.stage!=='exit'){p.stage='exit';bub(p,'네~ 다음에 올게요')}
-  for(const s of S.staff)if(s.loc!=='boss')s.task=null;
-  sfx('chance');say('【원장님】','👨‍⚕️ "오늘 진료는 여기까지입니다! 다들 고생 많았어요."');hud(true);
+  S.chances--;const now=performance.now();
+  D.dir={t0:now};D.freeze=now+2800;
+  for(const p of D.pats)if(p.stage!=='exit'){p.stage='exit';bub(p,pick(['네~ 원장님!','다음에 올게요~','안녕히 계세요!']),1700)}
+  for(const s of S.staff)if(s.loc!=='boss'){s.task=null;s.tk=null;bub(s,pick(['원장님 최고!','휴… 살았다','감사합니다 원장님!']),2000)}
+  sfx('chance');setTimeout(()=>sfx('win'),900);say('【원장님】','👨‍⚕️ "오늘 진료는 여기까지입니다! 다들 고생 많았어요."');hud(true);
 }
 function togglePause(){paused=!paused;hud(true)}
 function cycleSpeed(){speed=speed===1?2:speed===2?3:1;hud(true)}
@@ -439,7 +452,7 @@ function shopItems(){
     {k:'sofa',name:'🛋️ 대기실 소파',cost:300000,desc:'환자 인내심 +20%',done:S.sofa},
     {k:'coffee',name:'☕ 커피머신',cost:400000,desc:'점심을 다 쉬면 스트레스 추가 −10',done:S.coffee},
     {k:'party',name:'🍻 회식',cost:300000+S.staff.length*50000,desc:'전원 스트레스 −25'},
-    {k:'level',name:`🏥 병원 확장 → Lv.${S.level+1}`,cost:lvCost(S.level),desc:S.level>=10?'최고 레벨이에요':`「${LEVELS[S.level]}」 · 환자↑ · 모달 침대↑ · 원장님 찬스 +1`,done:S.level>=10}
+    {k:'level',name:`🏥 병원 확장 → Lv.${S.level+1}`,cost:lvCost(S.level),desc:S.level>=10?'최고 레벨이에요':`「${LEVELS[S.level]}」 · 환자↑ · 대기실 좌석↑ · 인테리어 고급화 · 원장님 찬스 +1`,done:S.level>=10}
   ];
 }
 
@@ -471,7 +484,7 @@ function vPrep(){
   return`<div style="max-width:480px;margin:auto">
   <div class="win"><h3>📋 Day ${S.day} · ${md.m}개월차 ${md.d}일 아침</h3>
   ${S.weather==='rain'?'🌧️ 비 · 관절 통증 어르신 증가':S.weather==='snow'?'❄️ 눈 · 환자 −20%':'☀️ 맑음'}<br>
-  <small>🏥 Lv.${S.level} ${LEVELS[S.level-1]} · 예상 환자 약 ${dayCount()}명<br>
+  <small>🏥 Lv.${S.level} ${LEVELS[S.level-1]} · 예상 환자 약 ${dayCount()}명 · 대기실 ${seatN()}석<br>
   😊 만족도 ${Math.round(S.sat)} · 💰 ${won(S.money)} · 월급날까지 ${MONTH-md.d}일${S.badDays>0?' · ⚠️ 악플 여파로 환자 감소':''}</small></div>
   <div class="win"><h3>👥 직원 관리</h3><small>점심 1시간은 꼭 쉬게 해 주세요. 시간이 겹치면 치료실이 비어요.</small>
   ${S.staff.map(s=>`<div class="cand"><div style="display:flex;justify-content:space-between;align-items:center"><div><b style="color:#ffe9a8">${s.name}</b> <small>${s.role==='mgr'?'실장':'치료사'} · Lv.${s.lv} · 스트레스 ${Math.round(s.stress)}</small></div>
@@ -485,6 +498,7 @@ function vPlay(){
   return`<div id="play"><div class="main">
   <div class="win hud" id="hud"></div>
   <canvas id="map"></canvas>
+  <div class="legend">처방 <i style="background:#ffb74d">모</i>모달 <i style="background:#64b5f6">충</i>충격파 <i style="background:#81c784">도</i>도수 · <b>흰 테두리</b> = 지금 기다리는 치료</div>
   <div class="win msg" id="msg" style="margin-top:7px"></div>
   <div class="win"><h3>👥 직원 <small style="font-size:12px">탭해서 선택 → 맵에서 방 탭</small></h3><div class="staffs" id="staffs"></div></div>
   </div><div class="side">
@@ -570,6 +584,9 @@ function person(x,y,o,walk){
   px('#2b2b3a',bx+4,by+5,1,2);px('#2b2b3a',bx+7,by+5,1,2);
   px('rgba(255,120,140,.7)',bx+3,by+7,1,1);px('rgba(255,120,140,.7)',bx+8,by+7,1,1);
   if(o.staff){px('#fff',bx+3,by+11,2,2);px(o.staff==='mgr'?'#ffd54a':'#e57373',bx+7,by+12,2,1)}
+  if(o.coat){px('#cfd8dc',bx+5,by+10,2,7);px('#c0392b',bx+5,by+11,2,3);px('#90caf9',bx+3,by+12,2,1);px('#cfd8dc',bx+2,by+16,8,1)}
+  if(o.glasses){px('#333',bx+3,by+4,3,1);px('#333',bx+7,by+4,3,1);px('#333',bx+6,by+5,1,1);px('#333',bx+3,by+4,1,3);px('#333',bx+9,by+4,1,3)}
+  if(o.mus)px(o.hair,bx+4,by+8,4,1);
 }
 function personS(x,y,o,w){ctx.save();ctx.translate(Math.round(x),Math.round(y));ctx.scale(1.3,1.3);person(0,0,o,w);ctx.restore()}
 function lying(x,y,o){const bx=Math.round(x)-12,by=Math.round(y)-6;px(o.skin,bx+1,by+1,6,6);px(o.hair,bx,by,3,8);px(o.top,bx+7,by,16,8);px('#bfe3ff',bx+12,by,11,8)}
@@ -577,6 +594,43 @@ function bubble(x,y,t){
   ctx.font='9px Jua,sans-serif';const w=Math.ceil(ctx.measureText(t).width)+10,bx=Math.max(2,Math.min(W-w-2,Math.round(x-w/2))),by=Math.round(y)-16;
   px('#23301f',bx-1,by-1,w+2,15);px('#fff',bx,by,w,13);px('#fff',Math.round(x)-2,by+13,4,2);px('#fff',Math.round(x)-1,by+15,2,1);
   txt(t,bx+5,by+10,'#23301f');
+}
+function chair(cx,cy,t){
+  if(t===0){px('#6fa8dc',cx-8,cy-6,16,8);px('rgba(0,0,0,.25)',cx-8,cy+2,16,2)}
+  else if(t===1){px('#3d5f9e',cx-8,cy-10,16,4);px('#4f7cc4',cx-8,cy-6,16,7);px('#2c3e66',cx-7,cy+1,2,2);px('#2c3e66',cx+5,cy+1,2,2)}
+  else if(t===2){px('#6d4128',cx-9,cy-10,18,5);px('#8d5a3b',cx-9,cy-6,18,7);px('#6d4128',cx-9,cy-6,2,7);px('#6d4128',cx+7,cy-6,2,7);px('#a8714d',cx-6,cy-5,12,4)}
+  else{px('#e2cfa8',cx-9,cy-11,18,6);px('#efe2c8',cx-9,cy-6,18,7);px('#d4af37',cx-9,cy+1,18,1);px('#d4af37',cx-8,cy+2,2,2);px('#d4af37',cx+6,cy+2,2,2);px('#fff8e6',cx-6,cy-5,12,3)}
+}
+function bed(bx,by,t){
+  px(['#8aa0b0','#7a95a8','#b08d6a','#d4af37'][t],bx,by+10,24,2);px(['#fff','#bfe9da','#e8d5b5','#f5ecd7'][t],bx,by,24,10);px(['#cfe8ff','#fff','#fff8e6','#fff'][t],bx,by+1,6,8);
+  if(t===3){px('#d4af37',bx+1,by+12,2,2);px('#d4af37',bx+21,by+12,2,2)}
+}
+const TAGC={modal:['모','#ffb74d'],shock:['충','#64b5f6'],manual:['도','#81c784']};
+function rxTags(p,y){
+  let list=[];
+  if(['qmodal','msetup','modal','mdone'].includes(p.stage))list=['modal',...p.rx];
+  else if(['qshock','qmanual','tshock','tmanual'].includes(p.stage))list=[...p.rx];
+  const n=list.length;if(!n)return;let x=Math.round(p.x-n*5);
+  list.forEach((k,i)=>{const[c,col]=TAGC[k];px(i===0?'#fff':'rgba(0,0,0,.45)',x-1,y-1,11,11);px(col,x,y,9,9);txt(c,x+4.5,y+8,'#1a1a1a',8,'center');x+=11});
+}
+function drawDirector(now){
+  const e=D.dir;if(!e)return;const k=(now-e.t0)/2800;if(k>=1){D.dir=null;return}
+  ctx.globalAlpha=Math.max(0,Math.min(1,k*6,(1-k)*5));
+  px('rgba(10,15,40,.6)',0,0,W,H);
+  const cx=W/2,cy=H/2-20;
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(now/900);ctx.fillStyle='rgba(255,233,140,.22)';
+  for(let i=0;i<10;i++){ctx.rotate(Math.PI/5);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-16,-300);ctx.lineTo(16,-300);ctx.closePath();ctx.fill()}ctx.restore();
+  const up=Math.min(1,k/0.15),ease=1-Math.pow(1-up,3),fy=H+40-(H/2+60)*ease+(up>=1?Math.sin(now/120)*2:0);
+  ctx.save();ctx.translate(cx,fy);ctx.scale(3.4,3.4);person(0,0,{skin:'#f1caa4',hair:'#9e9e9e',hs:0,top:'#f7f7f7',pants:'#3d4b5c',coat:1,glasses:1,mus:1},0);ctx.restore();
+  if(k>.3&&k<.9){const w=Math.floor(now/250)%2;px('#f1caa4',cx+20,fy-50-w*3,8,8);px('#f7f7f7',cx+20,fy-42-w*3,8,6)}
+  for(let i=0;i<10;i++){const a=i/10*Math.PI*2+now/500,rr=80+Math.sin(now/200+i)*6;txt('✦',cx+Math.cos(a)*rr,cy+Math.sin(a)*rr*.8,'#ffe9a8',11,'center')}
+  const by=Math.min(H-66,fy+12);
+  px('#fff',14,by,W-28,56);px('#1c2350',16,by+2,W-32,52);px('#34468c',16,by+2,W-32,16);
+  txt('👨‍⚕️ 원장님',24,by+14,'#ffe9a8',11);
+  const lines=['오늘 진료는 여기까지입니다!','모두 고생 많았어요~ 👋'];let rem=Math.floor(Math.max(0,k-.18)*60);
+  lines.forEach((l,i)=>{const ch=[...l];txt(ch.slice(0,Math.max(0,rem)).join(''),24,by+34+i*14,'#fff',12);rem-=ch.length});
+  ctx.globalAlpha=1;
+  if(k<.06){ctx.globalAlpha=1-k/.06;px('#fff',0,0,W,H);ctx.globalAlpha=1}
 }
 function plant(x,y){px('#a0714f',x,y+8,8,6);px('#4caf50',x-2,y,12,9);px('#66bb6a',x+1,y-3,6,4)}
 function drawRoomBox(x,y,w,h,label,locked,msg){
@@ -588,7 +642,7 @@ function drawMap(){
   const c=document.getElementById('map');if(!c)return;ctx=c.getContext('2d');ctx.setTransform(DPR,0,0,DPR,0,0);ctx.imageSmoothingEnabled=false;
   const P=PAL[S.level-1],lv=S.level,now=performance.now();
   for(let y=36;y<H;y+=12)for(let x=0;x<W;x+=12)px(((x+y)/12)%2?P[0]:P[1],x,y,12,12);
-  if(lv>=5){for(let y=36;y<126;y+=4)px('rgba(0,0,0,.025)',0,y,W,1)}
+  if(lv>=5){for(let y=36;y<126+O;y+=4)px('rgba(0,0,0,.025)',0,y,W,1)}
   // 위쪽 벽 + 창문 + 간판
   px(P[2],0,0,W,36);px('rgba(0,0,0,.2)',0,32,W,4);
   const nw=2+Math.floor(lv/3);
@@ -601,48 +655,78 @@ function drawMap(){
   px(lv>=9?'#d4af37':'#fff',W/2-78,4,156,26);px(lv>=9?'#2e3b33':'#2f7d4f',W/2-76,6,152,22);
   txt('서울그린정형외과',W/2,17,'#fff',12,'center');txt(LEVELS[lv-1],W/2,26,lv>=9?'#ffe9a8':'#cdeccd',8,'center');
   // 접수/대기
-  if(lv>=6){px('#b5533c',168,48,186,74);px('#c96a50',172,52,178,66)}
-  px('#a0714f',16,66,104,14);px('#c48b5f',16,63,104,4);px('#333',96,54,14,10);px('#7ed4ff',98,56,10,6);
-  txt('접수',24,76,'#fff',9);
-  const chairC=lv>=6?'#3e5a8a':'#6fa8dc';
-  for(let j=0;j<12;j++){const cx=182+(j%4)*44,cy=62+Math.floor(j/4)*24;px(chairC,cx-8,cy-6,16,8);px('rgba(0,0,0,.25)',cx-8,cy+2,16,2)}
-  plant(4,40);plant(340,96);
+  const t=tier(),rows=seatRows(),lobB=50+rows*24;
+  if(t>=1){px(['','#e08a6f','#5a78b0','#d4af37'][t],166,44,190,lobB-30);px(['','#c96a50','#3e5a8a','#7b1f2b'][t],169,47,184,lobB-36);if(t===3){for(let x=175;x<350;x+=12)px('rgba(212,175,55,.35)',x,50,2,lobB-42)}}
+  const DK=[['#a0714f','#c48b5f'],['#f2f2f2','#d9d9d9'],['#e8e4dc','#cfc9bd'],['#4e342e','#6d4c41']][t];
+  px('rgba(0,0,0,.15)',16,80,104,3);px(DK[0],16,66,104,14);px(DK[1],16,63,104,4);
+  if(t===1)px('#3fb560',16,72,104,3);
+  if(t===2){px('#bdb6a8',30,69,22,1);px('#bdb6a8',70,75,26,1);px('#bdb6a8',44,73,10,1)}
+  if(t===3){px('#d4af37',16,63,104,1);px('#d4af37',16,79,104,1);px('#d4af37',16,66,1,14);px('#d4af37',119,66,1,14);px('#d4af37',60,68,16,9);px('#2f7d4f',62,70,12,5)}
+  px('#333',96,54,14,10);px('#7ed4ff',98,56,10,6);if(t>=2){px('#333',76,54,14,10);px('#7ed4ff',78,56,10,6)}
+  if(t>=2)plant(20,48);
+  txt('접수',t===3?24:24,76,t===1?'#2f7d4f':t===3?'#ffe9a8':'#fff',9);
+  for(let j=0;j<seatN();j++){const[cx,cy]=seatPos(j);chair(cx,cy,t)}
+  plant(4,40);plant(340,lobB-26);
   if(lv>=2){px('#cfe8ff',140,42,10,16);px('#64b5f6',141,44,8,6)}
   if(lv>=3){px('#222',230,38,40,6);px((Math.floor(now/800)%2)?'#6fd0ff':'#ffd27f',232,39,36,4)}
-  if(lv>=4){px('#c0392b',126,96,14,24);px('#ffe066',128,100,10,3);px('#fff',128,106,10,8)}
-  if(lv>=5){px('#2a6fb0',150,42,0,0);px('#1e5a8a',282,40,26,12);px('#7fd3ff',283,41,24,10);px('#ff9800',284+((now/60)%20),45,3,2)}
-  if(lv>=7){plant(160,98);plant(124,40)}
+  if(lv>=4){px('#c0392b',126,lobB-28,14,24);px('#ffe066',128,lobB-24,10,3);px('#fff',128,lobB-18,10,8)}
+  if(lv>=5){px('#1e5a8a',282,40,26,12);px('#7fd3ff',283,41,24,10);px('#ff9800',284+((now/60)%20),45,3,2)}
+  if(lv>=7){plant(160,lobB-24);plant(124,40)}
   if(lv>=8){for(let i=0;i<4;i++){const lx=60+i*80;px('#ffe9a8',lx,37,6,2);px('rgba(255,240,180,.18)',lx-10,39,26,12)}}
-  if(lv>=10){px('#7fb3d5',320,46,26,18);px('#aee4ff',323,49,20,12);px('#fff',332,44+(Math.sin(now/200)>0?0:1),2,4);plant(150,40)}
-  // 벽
-  const wall=(y,gaps)=>{let x=0;for(const[a,b]of gaps){px(P[2],x,y,a-x,4);x=b}px(P[2],x,y,W-x,4)};
+  if(lv>=10){px('#7fb3d5',126,62,26,18);px('#aee4ff',129,65,20,12);px('#fff',138,60+(Math.sin(now/200)>0?0:1),2,4)}
+  // ---- 아래쪽(치료실들): 로비가 커진 만큼 내려서 그림 ----
+  ctx.save();ctx.translate(0,O);
+  const wall=(y,gaps)=>{let x=0;for(const[a,b]of gaps){px(P[2],x,y,a-x,4);if(t>=2)px('rgba(255,255,255,.25)',x,y,a-x,1);x=b}px(P[2],x,y,W-x,4);if(t>=2)px('rgba(255,255,255,.25)',x,y,W-x,1)};
   wall(124,[[150,180]]);wall(204,[[60,80],[150,170],[240,260],[330,350]]);wall(284,[[60,80],[150,170],[240,260],[330,350]]);wall(364,[[150,200]]);
   for(const yy of[208,288])for(let k=1;k<4;k++)px(P[2],k*90-2,yy,4,76);px(P[2],178,368,4,72);
-  // 모달실
+  if(t>=2)px(t===3?'rgba(212,175,55,.10)':'rgba(120,90,60,.07)',4,144,W-8,56);
   drawRoomBox(0,128,W,76,'모달치료실 · 전기·온열 치료');
-  const nb=beds(lv);for(let i=0;i<nb;i++){const[bx,by]=bedPos(i,nb);px('#8aa0b0',bx,by+10,24,2);px('#fff',bx,by,24,10);px('#cfe8ff',bx,by+1,6,8);px('#556',bx+8,by-10,9,7);px((Math.floor(now/500+i)%2)?'#5fd18a':'#2e7d4f',bx+10,by-8,2,2);px('#ffb74d',bx+14,by-8,2,2)}
-  // 충격파/도수
   const sl=slots(lv);
   for(let k=0;k<4;k++){
     for(const kind of['shock','manual']){
       const y0=kind==='shock'?206:286,x0=k*90,own=kind==='shock'?S.shock:S.manual,name=(kind==='shock'?'충격파 ':'도수 ')+(k+1);
       if(k<own){
-        px('#8aa0b0',x0+36,y0+56,30,2);px(kind==='shock'?'#fff':'#7fb7a4',x0+36,y0+44,30,12);px('#cfe8ff',x0+36,y0+45,7,10);
-        if(kind==='shock'){px('#4a6fa5',x0+70,y0+30,12,18);px('#9ff',x0+72,y0+33,8,5);px('#333',x0+75,y0+48,2,6)}
-        else{px('#e3d3b5',x0+6,y0+62,20,10);px('#c9a66b',x0+70,y0+34,12,16)}
+        if(t>=2)px(t===3?'rgba(212,175,55,.14)':'rgba(120,90,60,.10)',x0+28,y0+36,46,30);
+        if(kind==='shock'){
+          bed(x0+36,y0+44,t);
+          const MC=['#4a6fa5','#3f6fb5','#f0f0f0','#fafafa'][t];px(MC,x0+68,y0+28,14,20);px(t>=2?'#2b8cd6':'#9ff',x0+70,y0+31,10,6);px('#333',x0+74,y0+48,2,6);px(t===3?'#d4af37':'#555',x0+70,y0+53,10,2);
+          if(t>=1){px('#555',x0+62,y0+36,6,2);px('#888',x0+60,y0+38,2,6)}
+          if(t>=2)px((Math.floor(now/400)%2)?'#5fd18a':'#2e7d4f',x0+79,y0+44,2,2);
+        }else{
+          const TB=['#7fb7a4','#5aa18c','#8d5a3b','#3e2723'][t];px('#8aa0b0',x0+36,y0+56,26,2);px(TB,x0+36,y0+44,26,12);px(t>=2?'#fff8e6':'#cfe8ff',x0+36,y0+45,7,10);if(t===3){px('#d4af37',x0+36,y0+56,26,1)}
+          px(['#e3d3b5','#d7ccc8','#bcaaa4','#4e342e'][t],x0+6,y0+62,20,10);px(['#c9a66b','#bcaaa4','#a1887f','#4e342e'][t],x0+70,y0+34,12,16);
+          if(t>=2){px('#fff',x0+9,y0+28,4,4);px('#fff',x0+10,y0+32,2,7);px('#fff',x0+8,y0+34,6,1);px('#fff',x0+9,y0+39,1,4);px('#fff',x0+12,y0+39,1,4)}
+          if(t===3)plant(x0+70,y0+18);
+        }
         drawRoomBox(x0+2,y0+2,86,76,name);
       }else drawRoomBox(x0+2,y0+2,86,76,name,true,k<sl?'🛒 상점에서 추가':'🔒 Lv.'+(3*k-2));
     }
   }
-  // 휴게실 / 민원 상담실
-  drawRoomBox(0,368,180,72,'휴게실');px('#a0714f',60,380,60,14);px('#c48b5f',60,378,60,3);px('#e57373',8,384,30,10);px('#fff',150,376,18,26);px('#ddd',151,377,16,10);
-  if(S.coffee){px('#5d4037',126,378,12,14);px('#fff',129,382,6,4)}
-  drawRoomBox(182,368,178,72,'민원 상담실');px('#a0714f',300,380,40,10);
+  // 휴게실
+  drawRoomBox(0,368,180,72,'휴게실');
+  if(t===0){px('#a0714f',60,382,60,12);px('#c48b5f',60,380,60,3);px('#e57373',8,388,30,8)}
+  if(t===1){px('#f2f2f2',60,382,60,12);px('#ddd',60,380,60,3);px('#3d5f9e',6,382,36,5);px('#4f7cc4',6,387,36,8);px('#cfe8ff',126,384,10,16)}
+  if(t>=2){px(t===3?'#4e342e':'#a1887f',60,382,60,12);px(t===3?'#6d4c41':'#bcaaa4',60,380,60,3);px(t===3?'#e2cfa8':'#6d4128',4,380,40,6);px(t===3?'#efe2c8':'#8d5a3b',4,386,40,9);px('#222',70,370,30,7);px((Math.floor(now/900)%2)?'#6fd0ff':'#ffd27f',72,371,26,5);plant(46,374)}
+  if(t===3){px('#212121',128,384,14,16);px('#d4af37',128,384,14,2);px('#424242',130,388,10,8);px('#6d4c41',4,422,24,14);for(let i=0;i<3;i++)px(['#e57373','#64b5f6','#81c784'][i],6+i*7,424,5,10)}
+  px(t===3?'#cfd8dc':'#fff',150,376,18,26);px(t===3?'#b0bec5':'#ddd',151,377,16,10);
+  if(S.coffee){px('#5d4037',112,370,12,14);px('#fff',115,374,6,4)}
+  // 민원 상담실
+  drawRoomBox(182,368,178,72,'민원 상담실');px(['#a0714f','#d7ccc8','#8d5a3b','#3e2723'][t],300,380,40,10);
+  if(t>=2){chair(270,392,t);plant(340,372)}if(t===3)px('#d4af37',312,382,16,3);
+  ctx.restore();
+  // 모달 침대 (월드 좌표)
+  const nb=beds(lv);for(let i=0;i<nb;i++){const[bx,by]=bedPos(i,nb);bed(bx,by,t);
+    px(['#556','#4a6fa5','#e0e0e0','#cfd8dc'][t],bx+8,by-10,9,7);px((Math.floor(now/500+i)%2)?'#5fd18a':'#2e7d4f',bx+10,by-8,2,2);px('#ffb74d',bx+14,by-8,2,2);
+    if(t>=2)px(t===3?'rgba(200,170,230,.55)':'rgba(150,190,230,.5)',bx-5,by-12,2,24)}
   // 엔티티
   const ents=[];
-  for(const p of D.pats)ents.push({y:p.y,f:()=>{const ly=(p.stage==='modal'||p.stage==='msetup'||p.stage[0]==='t')&&arrived(p);
+  for(const p of D.pats)ents.push({y:p.y,f:()=>{const ly=(p.stage==='modal'||p.stage==='msetup'||p.stage==='mdone'||p.stage[0]==='t')&&arrived(p);
     if(ly)lying(p.x,p.y,p.look);else personS(p.x,p.y,p.look,p.walk);
     if(['recep','qmodal','qshock','qmanual'].includes(p.stage)){const pc=Math.max(0,p.patience/p.maxPat);px('#222',p.x-8,p.y-33,16,3);px(pc>.5?'#3fb560':pc>.25?'#f0b429':'#e5484d',p.x-8,p.y-33,Math.round(16*pc),3)}
+    if(ly&&(p.stage==='modal'||p.stage==='mdone')){const bx=Math.round(p.x)-12,by=Math.round(p.y)-6;px('#ffeb3b',bx+10,by+1,3,3);px('#ffeb3b',bx+16,by+4,3,3);px('#333',bx+11,by-1,1,2);px('#333',bx+17,by-1,1,5);px('#333',bx+11,by-2,8,1);px('#333',bx+18,by-6,1,4)}
+    if(p.stage==='mdone'&&ly&&Math.floor(now/400)%2)txt('🔔',p.x+10,p.y-12,'#000',10,'center');
+    if(p.stage!=='exit')rxTags(p,ly?p.y-26:p.y-46);
+    if(p.stand&&!ly&&p.stage!=='exit')px('rgba(255,80,80,.8)',p.x-8,p.y-29,16,1);
     if(p.stage==='exit'&&p.react)txt(p.react,p.x,p.y-30,'#000',11,'center');
     if(p.reg&&p.stage!=='exit'&&!ly)txt('⭐',p.x+8,p.y-24,'#000',7,'center');
     if(p.stage==='modal'&&ly){px('#222',p.x-12,p.y-12,24,2);px('#ffb74d',p.x-12,p.y-12,Math.round(24*(1-p.modalLeft/BASE.modal)),2)}
@@ -664,12 +748,13 @@ function drawMap(){
   // 선택 시 이동 가능 영역 표시
   const sS=S.staff.find(s=>s.id===sel);
   if(sS){ctx.strokeStyle='rgba(255,213,74,.9)';ctx.setLineDash([4,3]);ctx.lineWidth=2;
-    const zones=[[2,38,146,86],[2,130,W-4,72],[2,370,176,68]];
-    for(let k=0;k<S.shock;k++)zones.push([k*90+3,209,84,72]);for(let k=0;k<S.manual;k++)zones.push([k*90+3,289,84,72]);
-    if(D.boss)zones.push([184,370,174,68]);
+    const zones=[[2,38,146,86+O],[2,130+O,W-4,72],[2,370+O,176,68]];
+    for(let k=0;k<S.shock;k++)zones.push([k*90+3,209+O,84,72]);for(let k=0;k<S.manual;k++)zones.push([k*90+3,289+O,84,72]);
+    if(D.boss)zones.push([184,370+O,174,68]);
     zones.forEach(z=>ctx.strokeRect(...z));ctx.setLineDash([])}
   // 저녁 노을
   if(D.t>1020){ctx.globalAlpha=Math.min(.18,(D.t-1020)/300);px('#ff8a3d',0,0,W,H);ctx.globalAlpha=1}
+  drawDirector(now);
   if(paused){px('rgba(10,15,40,.45)',0,0,W,H);txt('일시정지',W/2,H/2,'#fff',20,'center')}
 }
 function drawTitleArt(){
@@ -724,7 +809,7 @@ document.addEventListener('pointerdown',()=>ac(),{passive:true});
 let last=performance.now();
 function frame(now){
   const dt=Math.min(.25,(now-last)/1000);last=now;
-  if(screen==='play'&&D){if(!paused)tick(dt*speed);if(screen==='play'){drawMap();hud();bgm(now)}}
+  if(screen==='play'&&D){if(!paused&&!(D.freeze>now))tick(dt*speed);if(screen==='play'){drawMap();hud();bgm(now)}}
   requestAnimationFrame(frame);
 }
 view();requestAnimationFrame(frame);
