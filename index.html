@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="서울그린">
+<meta name="theme-color" content="#1c2350">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>서울그린정형외과</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{margin:0;background:#2a2f4a;color:#fff;font-family:"Jua",-apple-system,"Apple SD Gothic Neo",sans-serif;font-size:14px}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);background:repeating-linear-gradient(45deg,#2a2f4a 0 10px,#2d3350 10px 20px)}
+#app{max-width:900px;margin:0 auto;padding:6px}
+.win{background:linear-gradient(180deg,rgba(52,70,140,.96),rgba(24,32,78,.96));border:2px solid #fff;border-radius:6px;box-shadow:0 0 0 2px #10153a,0 4px 0 #10153a;padding:7px 9px;margin-bottom:7px}
+.win h3{margin:0 0 5px;font-size:15px;font-weight:400;color:#ffe9a8}
+button{font:inherit;color:#fff;background:linear-gradient(180deg,#5a6cc0,#36438a);border:2px solid #fff;border-radius:5px;padding:5px 9px;box-shadow:0 2px 0 #10153a}
+button:active{transform:translateY(2px);box-shadow:none}
+button:disabled{opacity:.35}
+button.big{width:100%;font-size:18px;padding:11px;background:linear-gradient(180deg,#4fae7a,#2c7a52)}
+button.gold{background:linear-gradient(180deg,#e2b54a,#a87a1c)}
+small,.dim{color:#c3cbf0}
+#play{display:flex;gap:8px;align-items:flex-start}
+#play .main{flex:1 1 380px;max-width:480px;margin:0 auto;width:100%}
+#play .side{flex:0 0 330px}
+@media(max-width:760px){#play{flex-direction:column}#play .side{width:100%;flex:none;max-width:480px;margin:0 auto}}
+canvas#map{width:100%;display:block;border:2px solid #fff;border-radius:6px;box-shadow:0 0 0 2px #10153a;image-rendering:pixelated;touch-action:manipulation;background:#000}
+.hud .r{display:flex;justify-content:space-between;align-items:center;gap:4px}
+.hud .btns{display:flex;gap:4px;margin-top:5px}.hud .btns button{padding:3px 7px;font-size:13px}
+.hud .btns .chance{flex:1}
+.meter{height:7px;background:#10153a;border:1px solid #9aa6e0;border-radius:4px;overflow:hidden;flex:1;margin-left:4px}
+.meter u{display:block;height:100%}
+.msg{min-height:52px;font-size:14px;line-height:1.45;position:relative}
+.msg .nm{color:#ffe9a8}
+.msg:after{content:"▼";position:absolute;right:8px;bottom:2px;font-size:10px;animation:blink 1s infinite}
+@keyframes blink{50%{opacity:0}}
+.staffs{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:5px}
+.sc{border:2px solid #7f8bd0;border-radius:5px;padding:4px 6px;font-size:12px;background:rgba(0,0,0,.18)}
+.sc.sel{border-color:#ffd54a;background:rgba(255,213,74,.18)}
+.sc b{font-weight:400;color:#ffe9a8}
+.bar{height:5px;background:#10153a;border-radius:3px;overflow:hidden;margin:1px 0}.bar u{display:block;height:100%}
+.cl{font-size:12px;padding:3px 0;border-bottom:1px dashed rgba(255,255,255,.2)}
+.lv0{color:#8ef0b0}.lv1{color:#c3cbf0}.lv2{color:#ffcf6e}.lv3{color:#ff8a8a}
+table.t{width:100%;border-collapse:collapse;font-size:14px}table.t td{padding:3px 2px;border-bottom:1px dashed rgba(255,255,255,.2)}table.t td:last-child{text-align:right}
+.it{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,.2)}
+.it div{font-size:13px}
+.cand{border:2px solid #9aa6e0;border-radius:6px;padding:6px;margin:5px 0;background:rgba(0,0,0,.18)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;font-size:12px;text-align:center;margin:4px 0}
+.stats span{background:rgba(0,0,0,.25);border-radius:4px;padding:2px}
+.stats button{padding:0 6px;font-size:12px;margin-left:2px}
+select{font:inherit;border:2px solid #fff;border-radius:5px;background:#36438a;color:#fff;padding:2px 4px}
+h1{text-align:center;font-weight:400;font-size:34px;margin:30px 0 4px;color:#ffe9a8;text-shadow:0 3px 0 #10153a}
+#toast{position:fixed;left:50%;top:14%;transform:translateX(-50%);background:rgba(16,21,58,.95);border:2px solid #fff;color:#fff;padding:8px 14px;border-radius:6px;font-size:14px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:20;max-width:90%;text-align:center}
+#toast.on{opacity:1}
+.foot{text-align:center;font-size:12px;color:#9aa6e0;margin-top:8px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast"></div>
+<script>
+// ================= 기본 데이터 =================
+const W=360,H=440,MONTH=20,DAY0=540,DAY1=1080;
+const PRICE={modal:1000,shock:50000,manual:100000};
+const BASE={modal:10,shock:10,manual:30};
+const EXPG={modal:1,shock:3,manual:6};
+const STN={hp:'체력',res:'스트레스 내성',mental:'정신력',skill:'전문기술'};
+const LEVELS=['동네 1층 의원','리모델링 의원','2개 층 의원','재활 특화 의원','건물 전체 사용','정형외과 병원','재활센터 신관','스포츠재활 센터','서울그린 메디컬타워','서울그린 본원 & 2호점'];
+const PAL=[['#e9e2cf','#ddd5bf','#8d7b62'],['#e6ece0','#d9e2d2','#7b8a6e'],['#f0e6d6','#e4d7c2','#9a7e5c'],['#e3edf2','#d4e2ea','#66808e'],['#e2cfb2','#d6c09f','#7a5c3e'],['#f3efe9','#e6e0d8','#5c6b73'],['#efe8f3','#e2d8ea','#6b5a7a'],['#e6f0ea','#d6e6dc','#476a58'],['#f4f1ea','#e8e2d4','#3e4a52'],['#fbf7ee','#efe7d6','#2e3b33']];
+const TYPES={
+  old:{label:'어르신',pat:90,rx:{shock:.25,manual:.10}},
+  young:{label:'청년',pat:45,rx:{shock:.40,manual:.30}},
+  aunt:{label:'아주머니',pat:65,rx:{shock:.25,manual:.45}}
+};
+const BOSSES=[
+  {name:'할인 요구 아저씨',hp:300,weak:'mental',lines:['깎아줘요!','옆 병원은 더 싸던데?','카드 말고 현금가!']},
+  {name:'수다쟁이 단골',hp:400,weak:'res',lines:['내 얘기 좀 들어봐','우리 며느리가 말이야~','아직 안 끝났어!']},
+  {name:'인터넷 닥터',hp:500,weak:'skill',lines:['유튜브에선 이렇게 하던데?','그거 근거 있어요?','제가 찾아봤는데요']},
+  {name:'리뷰 협박러',hp:700,weak:'hp',lines:['별점 1개 줄 거예요','리뷰 쓴다?','사장 나와!']}
+];
+const L={
+  ptStart:['어디가 불편하세요?','오늘은 좀 어떠세요?','힘 빼세요~','조금 아플 수 있어요!','자세 바르게 해볼게요'],
+  modal:['찜질 올려 드릴게요','따뜻하게 해드릴게요','전기치료 시작할게요'],
+  old:['아이고 허리야…','선생님 손이 약손이네~','무릎이 쑤셔서 왔어','우리 손주가 말이야…'],
+  young:['헬스하다 삐끗했어요','거북목 때문에요…','빨리 끝나나요?','어깨가 뭉쳤어요'],
+  aunt:['여기 잘한다고 소문 듣고 왔어요','시원~하다!','아까 그 선생님 친절하더라','요 앞 반찬가게 알아요?'],
+  done:['시원하다~!','훨씬 가벼워요!','또 올게요~','최고예요!','감사합니다~'],
+  wait:['언제 불러요…','아직이에요?','시간 없는데…','배고프다…'],
+  angry:['다신 안 와!','민원 넣을 거예요!','리뷰 쓸 거야!'],
+  idle:['점심 뭐 먹지?','오늘 환자 많네…','커피 한 잔?','퇴근하고 싶다','원장님 기분 좋으시대','주말에 뭐 해?'],
+  mgr:['접수 도와드릴게요','성함이 어떻게 되세요?','잠시만 기다려주세요~'],
+  tired:['허리가 끊어질 것 같아…','오늘따라 힘드네','손목 나갈 것 같아']
+};
+const CMP2=['접수하고 30분째 아무도 안 불러요.','대기실이 너무 붐벼서 앉을 데가 없어요.','치료사분이 바빠서 설명을 못 들었어요.','안내 없이 계속 기다리기만 했어요.'];
+const CMP3=['[온라인 리뷰 ★1] 기다리다 지쳐서 그냥 나왔습니다.','[보건소 민원] 대기 안내가 전혀 없었어요.','[동네 카페] 여기 요즘 별로래요…','[온라인 리뷰 ★2] 치료는 괜찮은데 너무 오래 기다려요.'];
+const SKIN=['#f8dcc0','#f1caa4','#e9bb92'],HAIR=['#3b2a20','#5a3b28','#1f1b1b','#8a5a2b','#c98f4a','#4b3a6a'];
+const PTOP=['#e57373','#64b5f6','#ffb74d','#9575cd','#4db6ac','#f06292','#a1887f','#81c784'];
+const SUR='김이박최정강조윤장임한오서신권황안송류홍';
+const GIV=['민','서','지','현','수','예','하','도','윤','준','은','채','유','진','연','아','우','주','태','다','소','나','혜','성'];
+const r=n=>Math.floor(Math.random()*n),ri=(a,b)=>a+r(b-a+1),pick=a=>a[r(a.length)];
+const rname=()=>SUR[r(SUR.length)]+pick(GIV)+pick(GIV);
+const won=n=>Math.round(n).toLocaleString('ko-KR')+'원';
+const man=n=>(n/10000).toLocaleString('ko-KR',{maximumFractionDigits:1})+'만';
+const hm=t=>String(Math.floor(t/60)).padStart(2,'0')+':'+String(Math.floor(t%60)).padStart(2,'0');
+const slots=lv=>Math.min(4,1+Math.ceil(lv/3));
+const beds=lv=>Math.min(12,3+Math.floor(lv/3)+((S&&S.mbeds)||0));
+const lvCost=lv=>Math.round(2000000*Math.pow(1.7,lv-1)/100000)*100000;
+const maxHp=s=>60+s.st.hp*8;
+const expNeed=s=>20+s.lv*15;
+let uid=1;
+function mkStaff(role,st){
+  const s={id:uid++,name:rname(),role,st:st||{hp:ri(2,5),res:ri(2,5),mental:ri(2,5),skill:ri(2,5)},lv:1,exp:0,pts:0,stress:ri(0,10),lunch:720,earn:0,
+    look:{skin:pick(SKIN),hair:pick(HAIR),hs:r(3),top:role==='mgr'?'#3e5a8a':pick(['#5fb08a','#6fa8dc','#e891b0','#7fc4c0']),pants:'#3d4b5c'}};
+  s.curHp=maxHp(s);return s;
+}
+function candPrice(st){const sum=st.hp+st.res+st.mental+st.skill;return Math.round((200000+sum*sum*6000)/10000)*10000}
+function mkCands(){
+  const tiers=[[1,3],[2,5],[3,7]];
+  S.cands=tiers.map(([a,b])=>{const st={hp:ri(a,b),res:ri(a,b),mental:ri(a,b),skill:ri(a,b)};const s=mkStaff('pt',st);uid--;return{name:s.name,look:s.look,st,price:candPrice(st)}});
+}
+
+// ================= 상태 =================
+let S=null,D=null,screen='title',sel=null,paused=false,speed=1,report=null,auto=false;
+const KEY='seoulgreen_save_v2';
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function loadSave(){try{const s=localStorage.getItem(KEY);return s?JSON.parse(s):null}catch(e){return null}}
+function newGame(){
+  ac();uid=1;
+  S={day:1,money:1000000,sat:60,level:1,chances:3,sofa:false,coffee:false,shock:1,manual:1,
+    regs:[],staff:[mkStaff('mgr'),mkStaff('pt'),mkStaff('pt')],hist:[],complaints:[],monthRev:0,badDays:0,best:0,weather:'sun',cands:[]};
+  mkCands();prepDay();
+}
+function continueGame(){ac();S=loadSave();if(!S){newGame();return}uid=Math.max(...S.staff.map(s=>s.id))+1;S.regs=S.regs||[];screen='prep';view()}
+function prepDay(){const x=Math.random();S.weather=x<.6?'sun':x<.9?'rain':'snow';screen='prep';save();view()}
+function dayCount(){return Math.round((20+S.level*10+(S.regs?S.regs.length/3:0))*(0.4+S.sat/100*1.6)*(S.weather==='rain'?1.3:S.weather==='snow'?.8:1)*(S.badDays>0?.7:1))}
+function monthDay(d){return{m:Math.floor((d-1)/MONTH)+1,d:(d-1)%MONTH+1}}
+
+function startDay(){
+  ac();
+  const n=dayCount();
+  D={t:DAY0,pats:[],pid:1,boss:null,bossAt:(S.day>=2&&Math.random()<.35)?ri(600,960):null,rev:0,served:0,lost:0,lambda:n/510,count:n,fx:[],msg:[],satStart:S.sat};
+  const pts=S.staff.filter(s=>s.role==='pt');
+  const order=['modal'];for(let k=0;k<4;k++){if(k<S.shock)order.push('shock'+k);if(k<S.manual)order.push('manual'+k)}
+  for(const s of S.staff){Object.assign(s,{task:null,taskLeft:0,taskTot:1,moveTo:null,onLunch:false,lunchDone:false,rested:0,prevLoc:null,bossPrev:null,bub:null,autoCd:0,walk:0});s.curHp=maxHp(s)}
+  for(const s of S.staff){s.loc=s.role==='mgr'?'recep':(order[pts.indexOf(s)]||'rest')}
+  for(const s of S.staff){const[x,y]=spotOf(s,s.loc);s.x=x;s.y=y}
+  sel=null;paused=false;screen='play';view();
+  say(null,S.weather==='rain'?'🌧️ 비가 와요. 관절이 쑤시는 어르신들이 많이 오실 거예요.':S.weather==='snow'?'❄️ 눈이 와요. 환자가 조금 줄어들 거예요.':'☀️ 서울그린정형외과, 오늘도 영업 시작!');
+}
+
+// ================= 위치 =================
+function dest(s){return s.moveTo||s.loc}
+function roomInfo(loc){const k=+loc.replace(/\D/g,'');return{k,y0:loc.startsWith('shock')?206:286}}
+function spotOf(s,L){
+  const same=S.staff.filter(x=>dest(x)===L);const i=Math.max(0,same.indexOf(s));
+  if(L==='recep')return[50+i*28,56];
+  if(L==='modal'){if(s.task&&s.loc==='modal'){const p=D.pats.find(q=>q.id===s.task);if(p)return[p.tx-16,p.ty+4]}return[20,140+i*20]}
+  if(L.startsWith('shock')||L.startsWith('manual')){const{k,y0}=roomInfo(L);return s.task&&s.loc===L?[k*90+30,y0+60]:[k*90+16,y0+46]}
+  if(L==='rest')return[18+(i%7)*22,410+Math.floor(i/7)*16];
+  if(L==='boss')return[200+(i%7)*20,430];
+  return[s.x,s.y];
+}
+function bedPos(i,n){const two=n>6,per=two?Math.ceil(n/2):n,row=two?Math.floor(i/per):0;return[56+(i%per)*Math.floor(296/per),two?150+row*30:160]}
+function layoutPatients(){
+  const q=D.pats.filter(p=>p.stage==='recep'||p.stage==='reg').sort((a,b)=>a.id-b.id);
+  q.forEach((p,i)=>{if(i<7){p.tx=60+i*16;p.ty=106}else{p.tx=176+((i-7)%8)*20;p.ty=122}});
+  const w=D.pats.filter(p=>p.stage==='qmodal'||p.stage==='qshock'||p.stage==='qmanual').sort((a,b)=>a.qAt-b.qAt);
+  w.forEach((p,j)=>{if(j<12){p.tx=182+(j%4)*44;p.ty=62+Math.floor(j/4)*24}else{p.tx=170+((j-12)%9)*20;p.ty=122}});
+  const nb=beds(S.level);let extra=0;
+  for(const p of D.pats){
+    if(p.stage==='msetup'||p.stage==='modal'){if(p.bed>=0&&p.bed<nb){const[x,y]=bedPos(p.bed,nb);p.tx=x+12;p.ty=y+6}else{p.tx=340-(extra%10)*18;p.ty=200;extra++}}
+    if(p.stage==='tshock'||p.stage==='tmanual'){const{k,y0}=roomInfo((p.stage==='tshock'?'shock':'manual')+p.room);p.tx=k*90+52;p.ty=y0+52}
+    if(p.stage==='exit'){p.tx=-24;p.ty=112}
+  }
+}
+function step(e,dt){
+  const dx=e.tx-e.x,dy=e.ty-e.y,d=Math.hypot(dx,dy),v=110*dt;
+  if(d<=v||d<.5){e.x=e.tx;e.y=e.ty;e.walk=0;return true}
+  e.x+=dx/d*v;e.y+=dy/d*v;e.walk+=dt*6;return false;
+}
+const arrived=e=>Math.hypot(e.tx-e.x,e.ty-e.y)<1.5;
+
+// ================= 대사 =================
+function bub(e,t,delay){if(!e)return;const n=performance.now()+(delay||0);e.bub={t,from:n,until:n+2600}}
+const PAIRS=[['점심 뭐 먹을래?','김치찌개 콜!'],['오늘 환자 진짜 많다','버티자 파이팅…'],['원장님 오늘 기분 어때?','좋아 보이시던데?'],['퇴근하고 한잔?','오 좋지!'],['내 어깨도 누가 풀어줘…','나도 도수 받고 싶다'],['아까 그 어르신 귀여우셨지','사탕 주고 가셨어 ㅎㅎ'],['충격파 기계 또 뜨거워','잠깐 식히자']];
+function chatter(){const idle=S.staff.filter(s=>!s.task&&!s.moveTo);if(idle.length<2)return;const a=pick(idle),b=pick(idle.filter(x=>x!==a)),pr=pick(PAIRS);bub(a,pr[0]);bub(b,pr[1],1400)}
+function say(who,text){D.msg.push({who,text});if(D.msg.length>30)D.msg.shift()}
+function fx(x,y,t,c){D.fx.push({x,y,t,c,until:performance.now()+1200})}
+
+// ================= 게임 로직 =================
+function spawn(){
+  let type,look,reg=false;
+  if(S.regs.length&&Math.random()<Math.min(.35,S.regs.length/40)){const g=S.regs.splice(r(S.regs.length),1)[0];type=g.type;look=g.look;reg=true}
+  else{
+    const w=S.weather==='rain'?{old:.55,young:.2}:S.weather==='snow'?{old:.5,young:.25}:{old:.4,young:.3};
+    const x=Math.random();type=x<w.old?'old':x<w.old+w.young?'young':'aunt';
+    look={skin:pick(SKIN),top:pick(PTOP),pants:pick(['#4a4a5a','#5b6e8c','#6d5a4a']),hair:type==='old'?pick(['#d8d8d8','#bdbdbd','#eeeeee']):pick(HAIR),hs:type==='old'?2:type==='aunt'?3:r(2)};
+  }
+  const max=TYPES[type].pat*(S.sofa?1.2:1)*(reg?1.3:1);
+  const p={id:D.pid++,type,look,reg,stage:'recep',patience:max,maxPat:max,waited:0,skills:[],rx:[],qAt:D.t,x:-20,y:112,tx:0,ty:0,walk:0,bed:-1,bub:null,wl:0};
+  D.pats.push(p);sfx('door');
+  if(reg)bub(p,pick(['또 왔어요~ 😊','지난번에 너무 좋아서요!','단골이에요~']));else if(Math.random()<.4)bub(p,pick(L[type]));
+}
+function rxFor(p){const R=TYPES[p.type].rx;p.rx=[];if(Math.random()<R.shock)p.rx.push('shock');if(Math.random()<R.manual)p.rx.push('manual')}
+function next(p){if(p.rx.length){p.stage='q'+p.rx[0];p.qAt=D.t}else leave(p)}
+const PRAISE=['[온라인 리뷰 ★5] 선생님들이 너무 친절해요!','[온라인 리뷰 ★5] 도수치료 받고 허리가 살았어요.','[동네 카페] 서울그린 진짜 잘해요, 추천!','[온라인 리뷰 ★4] 대기는 조금 있지만 치료는 최고.'];
+function addReg(p){S.regs.push({type:p.type,look:p.look});if(S.regs.length>30)S.regs.shift()}
+function review(p,bad){
+  const who=TYPES[p.type].label+' 환자',text=bad?pick(CMP3):pick(PRAISE);
+  S.complaints.unshift({day:S.day,t:hm(D.t),lv:bad?3:0,who,text});S.complaints=S.complaints.slice(0,40);
+  if(bad){S.sat=Math.max(0,S.sat-3);say('【악플】',`${who}: "${text}"`);sfx('bad')}else{S.sat=Math.min(100,S.sat+1);say('【칭찬 리뷰】',`💌 ${who}: "${text}"`)}
+}
+function leave(p){
+  const k=p.skills.length?p.skills.reduce((a,b)=>a+b,0)/p.skills.length:3;
+  const s=56+k*3-p.waited*.35+ri(-8,8)+(p.reg?5:0),mul=p.type==='aunt'?2:1;
+  if(s>=75){S.sat+=.4*mul;p.react='💖';bub(p,pick(['최고예요! 또 올게요 😊','선생님 덕분에 살았어요!','친구한테도 소개할게요!']));if(Math.random()<.6)addReg(p);if(Math.random()<.2)review(p,0)}
+  else if(s>=60){S.sat+=.2*mul;p.react='🙂';bub(p,pick(['만족했어요~','시원하네요','다음에 또 올게요']));if(Math.random()<.3)addReg(p)}
+  else if(s>=40){p.react='😐';bub(p,pick(['그냥 그렇네…','음… 보통이네','다음엔 다른 데 가볼까']))}
+  else{S.sat-=.8*mul;p.react='😡';bub(p,pick(['다신 안 와!','리뷰 쓸 거야!','시간만 버렸네']));if(Math.random()<.35)review(p,1)}
+  S.sat=Math.max(0,Math.min(100,S.sat));
+  if(Math.random()<.12&&p.bub)say(TYPES[p.type].label+' 환자',`(집에 가며) "${p.bub.t}"`);
+  p.stage='exit';D.served++;
+}
+function complain(p){
+  const x=Math.random(),lv=x<.5?1:x<.85?2:3,mul=p.type==='aunt'?2:1;
+  S.sat=Math.max(0,S.sat-[0,1,2.5,5][lv]*mul);if(lv===3)S.badDays=3;
+  const who=TYPES[p.type].label+' 환자';
+  const text=lv===1?`${who}가 기다리다 돌아갔어요.`:lv===2?pick(CMP2):pick(CMP3);
+  S.complaints.unshift({day:S.day,t:hm(D.t),lv,who,text});S.complaints=S.complaints.slice(0,40);
+  bub(p,pick(L.angry));say(lv===1?null:'【민원 접수】',lv===1?'😒 '+text:`${who}: "${text}"`);
+  p.stage='exit';D.lost++;sfx('bad');
+}
+function gain(s,kind){
+  const rm=1.3-s.st.res*.06;
+  s.curHp=Math.max(0,s.curHp-({modal:.6,shock:2,manual:6})[kind]*(1.2-s.st.hp*.04));
+  s.stress+=({modal:.3,shock:1.2,manual:4})[kind]*rm*(s.curHp<maxHp(s)*.3?1.5:1);
+  addExp(s,EXPG[kind]);
+}
+function addExp(s,n){s.exp+=n;while(s.exp>=expNeed(s)){s.exp-=expNeed(s);s.lv++;s.pts+=2;bub(s,'레벨업! ✨');say(null,`✨ ${s.name} 레벨 ${s.lv}! 내일 아침 능력치를 올릴 수 있어요.`);sfx('win')}}
+function speedF(s){return(1.2-s.st.skill*.04)*(s.curHp<maxHp(s)*.3?1.3:1)}
+function credit(s,kind){const pr=PRICE[kind];S.money+=pr;D.rev+=pr;S.monthRev+=pr;if(s){s.earn+=pr*.1}}
+function resign(s,why){
+  if(s.task){const p=D&&D.pats.find(q=>q.id===s.task);if(p){if(p.stage==='reg')p.stage='recep';else if(p.stage==='msetup'){p.stage='qmodal';p.bed=-1}else if(p.stage[0]==='t'){p.stage='q'+p.stage.slice(1)}p.qAt=D.t}}
+  S.staff=S.staff.filter(x=>x!==s);if(sel===s.id)sel=null;
+  let m;
+  if(Math.random()<.5&&S.money>0){const a=Math.round(S.money*.3);S.money-=a;m=`💸 ${s.name} 퇴사! 현금 ${won(a)}을 챙겨 갔어요.`}
+  else{S.sat=Math.max(0,S.sat-8);m=`🚪 ${s.name} 퇴사! 단골 환자들을 데려갔어요.`}
+  const friend=S.staff.filter(x=>x.role==='pt'&&x.stress>=50);
+  if(s.role==='pt'&&friend.length&&Math.random()<.3){const f=pick(friend);S.staff=S.staff.filter(x=>x!==f);m+=` ${f.name}도 따라 나갔어요…`}
+  sfx('bad');if(D&&screen==='play')say('【퇴사】',m);return m;
+}
+function autoMove(s,cnt){
+  if(s.role==='mgr')return;
+  if(--s.autoCd>0)return;s.autoCd=8;
+  const here=dest(s),type=here==='recep'?'recep':here==='modal'?'modal':here.startsWith('shock')?'shock':here.startsWith('manual')?'manual':null;
+  if(type&&cnt[type]>0)return;
+  if(type==='modal'&&S.staff.filter(x=>x!==s&&dest(x)==='modal').length===0&&cnt.modal+D.pats.filter(p=>p.stage==='modal'||p.stage==='msetup').length>0)return;
+  let best=null,score=0;
+  const occ=l=>S.staff.some(x=>x!==s&&dest(x)===l);
+  if(type==='recep'&&cnt.recep>0)return;
+  if(cnt.recep>=3&&S.staff.filter(x=>x!==s&&dest(x)==='recep').length===0){best='recep';score=120+cnt.recep}
+  if(cnt.modal>0&&!occ('modal')&&100+cnt.modal>score){best='modal';score=100+cnt.modal}
+  for(let k=0;k<S.manual;k++)if(cnt.manual>0&&!occ('manual'+k)&&60+cnt.manual*10>score){best='manual'+k;score=60+cnt.manual*10}
+  for(let k=0;k<S.shock;k++)if(cnt.shock>0&&!occ('shock'+k)&&50+cnt.shock*10>score){best='shock'+k;score=50+cnt.shock*10}
+  if(best&&best!==here)go(s,best);
+}
+function go(s,L){if(L==='boss')s.bossPrev=s.loc;s.moveTo=L}
+function tick(dt){
+  D.t+=dt;
+  if(D.t<1050&&Math.random()<dayCount()/510*dt)spawn();
+  if(Math.random()<dt/25)chatter();
+  if(D.bossAt&&D.t>=D.bossAt&&!D.boss){
+    const b=BOSSES[r(Math.min(4,1+Math.floor(S.day/3)))],hp=b.hp+S.day*15;
+    D.boss={...b,hp,max:hp,left:120,x:380,y:405,tx:292,ty:410,walk:0,bub:null,lineCd:0};D.bossAt=null;
+    sfx('boss');say('【경보】',`🚨 진상 환자 「${b.name}」 등장! 약점: ${STN[b.weak]}. 선생님들을 민원 상담실로 보내세요!`);
+  }
+  layoutPatients();
+  const cnt={modal:0,shock:0,manual:0,recep:0};
+  for(const p of D.pats){if(p.stage==='recep')cnt.recep++;if(p.stage==='qmodal')cnt.modal++;if(p.stage==='qshock')cnt.shock++;if(p.stage==='qmanual')cnt.manual++}
+  for(const s of [...S.staff]){
+    const Ld=dest(s);[s.tx,s.ty]=spotOf(s,Ld);
+    const ok=step(s,dt);
+    if(s.moveTo){if(ok){s.loc=s.moveTo;s.moveTo=null}else continue}
+    if(s.onLunch){
+      if(s.loc==='rest'){s.rested+=dt;s.curHp=Math.min(maxHp(s),s.curHp+dt*.5);if(Math.random()<.004)bub(s,pick(L.idle))}
+      if(s.rested>=60){s.onLunch=false;s.lunchDone=true;let b=s.prevLoc;if(!b||b==='boss'||(b!=='rest'&&b!=='recep'&&b!=='modal'&&S.staff.some(x=>x!==s&&dest(x)===b)))b=s.role==='mgr'?'recep':'rest';go(s,b);say(null,`${s.name} 점심 끝! 복귀합니다.`)}
+      continue;
+    }
+    if(!s.lunchDone&&D.t>=s.lunch&&!s.task&&s.loc!=='boss'){s.onLunch=true;s.prevLoc=s.loc;go(s,'rest');bub(s,'점심 다녀올게요 🍱');continue}
+    if(s.loc==='boss'){
+      if(!D.boss){go(s,s.bossPrev||'rest');continue}
+      if(arrived(D.boss)){D.boss.hp-=(s.st.mental*1.2+s.st[D.boss.weak]*1.5+2)*dt;s.stress+=.5*dt*(1.2-s.st.mental*.05)}
+      continue;
+    }
+    if(s.loc==='recep'){
+      const isM=s.role==='mgr';
+      if(s.task){s.taskLeft-=dt;if(s.taskLeft<=0){const p=D.pats.find(q=>q.id===s.task);s.task=null;if(p&&p.stage==='reg'){p.stage='qmodal';p.qAt=D.t;p.patience=Math.min(p.maxPat,p.patience+(isM?15:5));s.stress+=(isM?.4:.8)*(1.3-s.st.res*.06);addExp(s,1);if(!isM&&Math.random()<.15)bub(p,'접수가 좀 느리네…')}}}
+      else{const p=D.pats.filter(q=>q.stage==='recep'&&arrived(q)).sort((a,b)=>a.id-b.id)[0];
+        if(p){p.stage='reg';s.task=p.id;s.taskTot=s.taskLeft=2*speedF(s)*(isM?1:1.8);if(Math.random()<.25)bub(s,isM?pick(L.mgr):pick(['어… 접수 화면이 어디더라','잠시만요, 실장님 자리라서…','성함 다시 한 번만요!']))}
+        else if(auto&&!isM)autoMove(s,cnt);}
+      continue;
+    }
+    if(s.loc==='modal'){
+      if(s.task){const p=D.pats.find(q=>q.id===s.task);if(!p){s.task=null;continue}if(arrived(p)){s.taskLeft-=dt;if(s.taskLeft<=0){p.stage='modal';p.modalLeft=BASE.modal;s.task=null;gain(s,'modal')}}}
+      else{
+        const p=D.pats.filter(q=>q.stage==='qmodal').sort((a,b)=>a.qAt-b.qAt)[0];
+        let b=-1;if(p){const nb=beds(S.level),used=new Set(D.pats.filter(q=>(q.stage==='msetup'||q.stage==='modal')&&q.bed>=0).map(q=>q.bed));for(let i=0;i<nb;i++)if(!used.has(i)){b=i;break}}
+        if(p&&b>=0){
+          p.stage='msetup';p.bed=b;p.mt=s.id;s.task=p.id;s.taskTot=s.taskLeft=1.5*speedF(s);if(Math.random()<.3)bub(s,pick(L.modal))}
+        else if(auto)autoMove(s,cnt);
+      }
+      continue;
+    }
+    if(s.loc.startsWith('shock')||s.loc.startsWith('manual')){
+      const kind=s.loc.startsWith('shock')?'shock':'manual',k=roomInfo(s.loc).k;
+      if(s.task){const p=D.pats.find(q=>q.id===s.task);if(!p){s.task=null;continue}
+        if(arrived(p)){s.taskLeft-=dt;if(s.taskLeft<=0){s.task=null;credit(s,kind);gain(s,kind);p.skills.push(s.st.skill);p.rx.shift();fx(p.x,p.y-30,'+'+man(PRICE[kind]),'#ffd54a');sfx('coin');if(s.curHp<maxHp(s)*.3&&Math.random()<.4)bub(s,pick(L.tired));next(p)}}}
+      else{const p=D.pats.filter(q=>q.stage==='q'+kind).sort((a,b)=>a.qAt-b.qAt)[0];
+        if(p){p.stage='t'+kind;p.room=k;s.task=p.id;s.taskTot=s.taskLeft=BASE[kind]*speedF(s);if(Math.random()<.45)bub(s,pick(L.ptStart))}
+        else if(auto)autoMove(s,cnt)}
+      continue;
+    }
+    if(s.loc==='rest'&&auto)autoMove(s,cnt);
+    if(s.loc==='rest'&&Math.random()<.003)bub(s,pick(L.idle));
+  }
+  for(const p of D.pats){
+    step(p,dt);
+    if(p.stage==='modal'){p.modalLeft-=dt;if(p.modalLeft<=0){const t=S.staff.find(x=>x.id===p.mt);credit(t,'modal');p.skills.push(t?t.st.skill:3);fx(p.x,p.y-24,'+1천','#ffe9a8');rxFor(p);next(p)}}
+    else if(p.stage==='recep'||p.stage==='qmodal'||p.stage==='qshock'||p.stage==='qmanual'){
+      if(p.stage!=='recep'||arrived(p)){p.patience-=dt;p.waited+=dt}
+      if(p.patience<p.maxPat*.25&&!p.wl){p.wl=1;bub(p,pick(L.wait))}
+      if(p.patience<=0)complain(p);
+    }
+  }
+  D.pats=D.pats.filter(p=>!(p.stage==='exit'&&p.x<=-20));
+  if(D.boss){
+    const b=D.boss;step(b,dt);b.left-=dt;b.lineCd-=dt;if(b.lineCd<=0){b.lineCd=12;bub(b,pick(b.lines))}
+    if(b.hp<=0){const bonus=100000+S.day*10000;S.money+=bonus;D.rev+=bonus;S.monthRev+=bonus;S.staff.filter(s=>s.loc==='boss').forEach(s=>addExp(s,15));say('【해결】',`🎉 「${b.name}」 진정시키기 성공! 보너스 ${won(bonus)}`);sfx('win');D.boss=null}
+    else if(b.left<=0){S.sat=Math.max(0,S.sat-6);S.badDays=3;S.complaints.unshift({day:S.day,t:hm(D.t),lv:3,who:b.name,text:'[온라인 리뷰 ★1] 이 병원 응대 최악입니다. 절대 가지 마세요.'});say('【민원 접수】',`💢 「${b.name}」이(가) 악플을 남기고 떠났어요.`);sfx('bad');D.boss=null}
+  }
+  for(const s of [...S.staff])if(s.stress>=100)resign(s);
+  if(D.t>=DAY1)endDay();
+}
+function L_idle(){return L.idle}
+
+// ================= 조작 =================
+function areaAt(x,y){
+  if(y<36)return null;
+  if(y<126)return x<150?'recep':null;
+  if(y<206)return'modal';
+  const k=Math.min(3,Math.floor(x/90));
+  if(y<286)return'shock'+k;if(y<366)return'manual'+k;
+  return x<180?'rest':'boss';
+}
+function canvasTap(ev){
+  if(screen!=='play')return;ac();
+  const c=ev.currentTarget,rc=c.getBoundingClientRect(),x=(ev.clientX-rc.left)/rc.width*W,y=(ev.clientY-rc.top)/rc.height*H;
+  let hit=null,bd=14;
+  for(const s of S.staff){const d=Math.hypot(s.x-x,(s.y-13)-y);if(d<bd){bd=d;hit=s}}
+  if(hit){selectStaff(hit.id);return}
+  if(sel==null){const a=areaAt(x,y);if(a&&a!=='boss'&&a!=='rest'&&!a.startsWith('modal')&&a!=='recep'){const{k}=roomInfo(a),own=a.startsWith('shock')?S.shock:S.manual;if(k>=own)toast(k>=slots(S.level)?`🔒 병원 레벨 ${3*k-2}부터 확장 가능해요`:'🛒 정산 화면 상점에서 치료실을 늘릴 수 있어요')}return}
+  const a=areaAt(x,y);if(a)sendTo(a);
+}
+function selectStaff(id){sfx('tap');sel=sel===id?null:id;hud(true)}
+function sendTo(Lc){
+  const s=S.staff.find(x=>x.id===sel);if(!s)return;
+  if(s.onLunch){toast('🍱 점심 중이에요');return}
+  if(s.task){toast(s.loc==='recep'?'📝 접수 중이에요':'💪 치료 중이에요. 끝나면 옮겨 주세요');return}
+  if(dest(s)===Lc){sel=null;hud(true);return}
+  if(Lc==='boss'&&!D.boss){toast('지금은 진상 환자가 없어요');return}
+  if(Lc==='recep'&&S.staff.filter(x=>x!==s&&dest(x)==='recep').length>=2){toast('접수대는 2명까지만 앉을 수 있어요');return}
+  if(Lc.startsWith('shock')||Lc.startsWith('manual')){const{k}=roomInfo(Lc),own=Lc.startsWith('shock')?S.shock:S.manual;if(k>=own){toast('아직 없는 치료실이에요');return}
+    if(S.staff.some(x=>x!==s&&dest(x)===Lc)){toast('이미 다른 선생님이 있어요');return}}
+  go(s,Lc);sel=null;sfx('tap');bub(s,pick(['네, 갈게요!','알겠습니다~','바로 갈게요']));hud(true);
+}
+function useChance(){
+  ac();
+  if(D.boss){toast('🚫 원장님이 자리를 피하셨습니다');sfx('bad');return}
+  if(S.chances<=0){toast('원장님 찬스를 다 썼어요');return}
+  S.chances--;
+  for(const p of D.pats)if(p.stage!=='exit'){p.stage='exit';bub(p,'네~ 다음에 올게요')}
+  for(const s of S.staff)if(s.loc!=='boss')s.task=null;
+  sfx('chance');say('【원장님】','👨‍⚕️ "오늘 진료는 여기까지입니다! 다들 고생 많았어요."');hud(true);
+}
+function togglePause(){paused=!paused;hud(true)}
+function cycleSpeed(){speed=speed===1?2:speed===2?3:1;hud(true)}
+function toggleSound(){soundOn=!soundOn;ac();hud(true)}
+function toggleAuto(){auto=!auto;toast(auto?'🤖 자동 배치 ON: 쉬는 선생님이 바쁜 방으로 알아서 가요':'🤖 자동 배치 OFF');hud(true)}
+function setLunch(id,v){const s=S.staff.find(x=>x.id===id);if(s)s.lunch=+v;save()}
+function addStat(id,k){const s=S.staff.find(x=>x.id===id);if(!s||s.pts<=0||s.st[k]>=15)return;s.st[k]++;s.pts--;if(k==='hp')s.curHp=maxHp(s);sfx('coin');save();view()}
+
+// ================= 정산 =================
+function endDay(){
+  const lines=[];
+  for(const s of S.staff){const r0=s.rested;let d=r0>=60?-10:r0>=30?10:30;if(r0>=60&&S.coffee)d-=10;s.stress=Math.max(0,s.stress+d);lines.push(`${s.name}: 휴게 ${Math.floor(r0)}분 → 스트레스 ${d>0?'+':''}${d}`)}
+  const quits=[];for(const s of [...S.staff])if(s.stress>=100)quits.push(resign(s));
+  for(const s of S.staff){s.stress=Math.max(0,s.stress-5);s.curHp=maxHp(s)}
+  let extra=0;if(!S.staff.some(s=>s.role==='mgr')){S.staff.push(mkStaff('mgr'));extra=500000;S.money-=extra;quits.push('🧑‍💼 새 실장님을 급히 채용했어요 (500,000원)')}
+  let pay=null;
+  if(S.day%MONTH===0){
+    const rows=S.staff.map(s=>({name:s.name+(s.role==='mgr'?' (실장·관리수당 포함)':''),amt:Math.round(s.earn+(s.role==='mgr'?S.monthRev*.03:0))}));
+    const rent=S.level*1000000;rows.push({name:'임대료·운영비',amt:rent});
+    const total=rows.reduce((a,b)=>a+b.amt,0);S.money-=total;
+    pay={rows,total,monthRev:S.monthRev};S.monthRev=0;S.staff.forEach(s=>s.earn=0);
+  }
+  S.hist.push({d:S.day,rev:D.rev,pay:pay?pay.total:0});if(S.hist.length>40)S.hist.shift();
+  S.best=Math.max(S.best,D.rev);if(S.badDays>0)S.badDays--;
+  report={day:S.day,rev:D.rev,served:D.served,lost:D.lost,sat0:D.satStart,lines,quits,pay,extra};
+  S.day++;mkCands();
+  if(pay&&S.money<0){screen='over';try{localStorage.removeItem(KEY)}catch(e){}view();return}
+  save();screen='end';sfx('win');view();
+}
+function buy(k){
+  const items=shopItems(),it=items.find(x=>x.k===k);if(!it||it.done)return;
+  if(S.money<it.cost){toast('돈이 부족해요');sfx('bad');return}
+  S.money-=it.cost;
+  if(k==='mbed')S.mbeds=(S.mbeds||0)+1;if(k==='shock')S.shock++;if(k==='manual')S.manual++;if(k==='sofa')S.sofa=true;if(k==='coffee')S.coffee=true;
+  if(k==='party'){S.staff.forEach(s=>s.stress=Math.max(0,s.stress-25));toast('🍻 다들 기분이 좋아졌어요')}
+  if(k==='level'){S.level++;S.chances=Math.min(3,S.chances+1);toast(`🏥 「${LEVELS[S.level-1]}」(으)로 확장! 원장님 찬스 +1`)}
+  sfx('coin');save();view();
+}
+function hire(i){
+  const c=S.cands[i];if(!c)return;if(S.money<c.price){toast('돈이 부족해요');sfx('bad');return}
+  S.money-=c.price;const s=mkStaff('pt',{...c.st});s.name=c.name;s.look=c.look;S.staff.push(s);S.cands.splice(i,1);
+  toast(`🎉 ${s.name} 선생님 입사!`);sfx('win');save();view();
+}
+function shopItems(){
+  const sl=slots(S.level);
+  return[
+    {k:'shock',name:'💥 충격파실 추가',cost:2000000*S.shock,desc:`보유 ${S.shock} / 현재 레벨 최대 ${sl}`,done:S.shock>=sl},
+    {k:'manual',name:'🙌 도수치료실 추가',cost:2500000*S.manual,desc:`보유 ${S.manual} / 현재 레벨 최대 ${sl}`,done:S.manual>=sl},
+    {k:'mbed',name:'🛏️ 모달 침대 추가',cost:300000*((S.mbeds||0)+1),desc:`현재 ${beds(S.level)}개 (최대 12개) · 동시에 받는 모달 환자 +1`,done:beds(S.level)>=12},
+    {k:'sofa',name:'🛋️ 대기실 소파',cost:300000,desc:'환자 인내심 +20%',done:S.sofa},
+    {k:'coffee',name:'☕ 커피머신',cost:400000,desc:'점심을 다 쉬면 스트레스 추가 −10',done:S.coffee},
+    {k:'party',name:'🍻 회식',cost:300000+S.staff.length*50000,desc:'전원 스트레스 −25'},
+    {k:'level',name:`🏥 병원 확장 → Lv.${S.level+1}`,cost:lvCost(S.level),desc:S.level>=10?'최고 레벨이에요':`「${LEVELS[S.level]}」 · 환자↑ · 모달 침대↑ · 원장님 찬스 +1`,done:S.level>=10}
+  ];
+}
+
+// ================= 화면(HTML) =================
+function bar(v,max,c){return`<div class="bar"><u style="width:${Math.max(0,Math.min(100,v/max*100))}%;background:${c}"></u></div>`}
+function stLine(st){return`<div class="stats"><span>체력 ${st.hp}</span><span>내성 ${st.res}</span><span>정신 ${st.mental}</span><span>기술 ${st.skill}</span></div>`}
+function view(){
+  const f={title:vTitle,prep:vPrep,play:vPlay,end:vEnd,over:vOver}[screen];
+  document.getElementById('app').innerHTML=f();
+  if(screen==='play'){const c=document.getElementById('map');c.width=W*DPR;c.height=H*DPR;c.addEventListener('pointerdown',canvasTap);hud(true)}
+  if(screen==='title')drawTitleArt();
+}
+function vTitle(){
+  const has=!!loadSave();
+  return`<div style="max-width:480px;margin:auto"><h1>서울그린정형외과</h1><p style="text-align:center;margin:0 0 12px" class="dim">물리치료실 경영 디펜스 · 시험판 v0.3</p>
+  <canvas id="tart" style="width:100%;image-rendering:pixelated;border:2px solid #fff;border-radius:6px;margin-bottom:8px"></canvas>
+  <div class="win"><h3>하는 법</h3><small>
+  ① 맵에서 선생님을 탭하고, 보낼 방을 탭해요. 실장님 포함 모두가 접수·모달·충격파·도수 어디든 갈 수 있어요. 치료사는 접수가 실장님보다 느려요.<br>
+  ② 모든 치료실은 선생님이 한 명은 있어야 돌아가요. 모달 침대가 꽉 차면 환자가 기다려요. 침대는 상점에서 늘릴 수 있어요.<br>
+  ③ 환자 머리 위 막대가 다 줄면 돌아가거나 민원을 넣어요. 만족한 환자는 단골(⭐)이 되어 다시 오고, 불만인 환자는 악플을 남겨요. 병원 만족도가 높을수록 환자가 많이 와요.<br>
+  ④ 아침마다 점심시간을 정해 주세요. 레벨이 오른 선생님은 아침에 능력치를 올릴 수 있어요.<br>
+  ⑤ 월급은 ${MONTH}일마다 한 번, 각자 한 치료 금액의 10%예요. 실장님은 관리수당(매출 3%)을 더 받아요.<br>
+  ⑥ 진상 환자는 민원 상담실로 선생님을 보내 HP를 깎아요. 원장님 찬스는 진상이 있으면 못 써요.</small></div>
+  <button class="big" onclick="newGame()">새 게임</button>
+  ${has?`<button class="big" style="margin-top:8px;background:linear-gradient(180deg,#5a6cc0,#36438a)" onclick="continueGame()">이어하기</button>`:''}</div>`;
+}
+function vPrep(){
+  const md=monthDay(S.day),opts=t=>{let o='';for(let v=660;v<=840;v+=30)o+=`<option value="${v}" ${v===t?'selected':''}>${hm(v)}</option>`;return o};
+  return`<div style="max-width:480px;margin:auto">
+  <div class="win"><h3>📋 Day ${S.day} · ${md.m}개월차 ${md.d}일 아침</h3>
+  ${S.weather==='rain'?'🌧️ 비 · 관절 통증 어르신 증가':S.weather==='snow'?'❄️ 눈 · 환자 −20%':'☀️ 맑음'}<br>
+  <small>🏥 Lv.${S.level} ${LEVELS[S.level-1]} · 예상 환자 약 ${dayCount()}명<br>
+  😊 만족도 ${Math.round(S.sat)} · 💰 ${won(S.money)} · 월급날까지 ${MONTH-md.d}일${S.badDays>0?' · ⚠️ 악플 여파로 환자 감소':''}</small></div>
+  <div class="win"><h3>👥 직원 관리</h3><small>점심 1시간은 꼭 쉬게 해 주세요. 시간이 겹치면 치료실이 비어요.</small>
+  ${S.staff.map(s=>`<div class="cand"><div style="display:flex;justify-content:space-between;align-items:center"><div><b style="color:#ffe9a8">${s.name}</b> <small>${s.role==='mgr'?'실장':'치료사'} · Lv.${s.lv} · 스트레스 ${Math.round(s.stress)}</small></div>
+  <div><small>점심</small> <select onchange="setLunch(${s.id},this.value)">${opts(s.lunch)}</select></div></div>
+  <div class="stats">${Object.keys(STN).map(k=>`<span>${STN[k].replace('스트레스 ','')} ${s.st[k]}${s.pts>0?`<button onclick="addStat(${s.id},'${k}')">+</button>`:''}</span>`).join('')}</div>
+  ${s.pts>0?`<small style="color:#ffd54a">✨ 올릴 수 있는 포인트 ${s.pts}</small>`:''}</div>`).join('')}
+  <small>체력: 최대 체력·덜 지침 / 내성: 스트레스 덜 쌓임 / 정신력: 진상 대응력 / 전문기술: 치료 속도·환자 만족</small></div>
+  <button class="big" onclick="startDay()">🏥 영업 시작</button></div>`;
+}
+function vPlay(){
+  return`<div id="play"><div class="main">
+  <div class="win hud" id="hud"></div>
+  <canvas id="map"></canvas>
+  <div class="win msg" id="msg" style="margin-top:7px"></div>
+  <div class="win"><h3>👥 직원 <small style="font-size:12px">탭해서 선택 → 맵에서 방 탭</small></h3><div class="staffs" id="staffs"></div></div>
+  </div><div class="side">
+  <div class="win"><h3>📈 병원 매출</h3><canvas id="chart" style="width:100%;height:170px;display:block"></canvas><small id="chartnote"></small></div>
+  <div class="win"><h3>📮 민원·리뷰함</h3><div id="cmp"></div></div>
+  </div></div>`;
+}
+let lastHud=0;
+function hud(force){
+  const now=performance.now();if(!force&&now-lastHud<300)return;lastHud=now;
+  if(screen!=='play'||!D)return;
+  const md=monthDay(S.day),unpaid=S.staff.reduce((a,s)=>a+s.earn,0)+S.monthRev*.03;
+  const sc=S.sat>=70?'#5fd18a':S.sat>=40?'#ffd54a':'#ff6b6b';
+  document.getElementById('hud').innerHTML=`<div class="r"><span>Day ${S.day} · ${md.m}개월 ${md.d}일</span><span>⏰ ${hm(D.t)} ${S.weather==='rain'?'🌧️':S.weather==='snow'?'❄️':'☀️'}</span><span>Lv.${S.level}</span></div>
+  <div class="r"><span>💰 ${won(S.money)}</span><span style="display:flex;align-items:center;flex:1;margin-left:10px">😊 ${Math.round(S.sat)}<span class="meter"><u style="width:${S.sat}%;background:${sc}"></u></span></span></div>
+  <div class="r"><small>월급날 D-${MONTH-md.d} · 미지급 급여 ${won(unpaid)}</small><small>오늘 ${won(D.rev)}</small></div>
+  <div class="btns"><button onpointerdown="togglePause()">${paused?'▶':'⏸'}</button><button onpointerdown="cycleSpeed()">x${speed}</button><button onpointerdown="toggleSound()">${soundOn?'🔊':'🔇'}</button><button onpointerdown="toggleAuto()" style="${auto?'background:linear-gradient(180deg,#4fae7a,#2c7a52)':''}">🤖${auto?'ON':'OFF'}</button>
+  <button class="chance gold" onpointerdown="useChance()" ${D.boss||!S.chances?'disabled':''}>👨‍⚕️ 원장님 찬스 ×${S.chances}</button></div>`;
+  const m=D.msg.slice(-2);
+  const selS=S.staff.find(s=>s.id===sel);
+  document.getElementById('msg').innerHTML=(paused?'<span class="nm">【일시정지】</span><br>':'')+(selS?`<span class="nm">【${selS.name}】</span> 어디로 갈까요? 맵에서 방을 탭해 주세요.<br>`:'')+m.map(x=>(x.who?`<span class="nm">${x.who}</span> `:'')+x.text).join('<br>');
+  document.getElementById('staffs').innerHTML=S.staff.map(s=>`<div class="sc ${sel===s.id?'sel':''}" onpointerdown="selectStaff(${s.id})"><b>${s.name}</b> <small>${s.role==='mgr'?'실장':'Lv.'+s.lv}</small><br><small>${staffStatus(s)}</small>
+  ${bar(s.curHp,maxHp(s),'#5fd18a')}${bar(s.stress,100,s.stress>=70?'#ff6b6b':'#ffd54a')}</div>`).join('');
+  document.getElementById('cmp').innerHTML=S.complaints.length?S.complaints.slice(0,7).map(c=>`<div class="cl lv${c.lv}">${['💌','🚶','📝','🔥'][c.lv]} <small>D${c.day} ${c.t}</small> ${c.who}<br>${c.text}</div>`).join(''):'<small>아직 들어온 민원·리뷰가 없어요 😊</small>';
+  drawChart();
+}
+function locName(l){if(!l)return'';if(l==='recep')return'접수대';if(l==='rest')return'휴게실';if(l==='boss')return'민원 상담실';if(l==='modal')return'모달실';const{k}=roomInfo(l);return(l.startsWith('shock')?'충격파 ':'도수 ')+(k+1)}
+function staffStatus(s){
+  if(s.onLunch)return s.loc==='rest'?`🍱 점심 ${Math.floor(s.rested)}/60분`:'🍱 휴게실로 가는 중';
+  if(s.moveTo)return'🚶 '+locName(s.moveTo)+'(으)로';
+  if(s.loc==='boss')return'⚔️ 진상 대응 중';
+  if(s.task)return s.loc==='recep'?'📝 접수 중':'💪 '+locName(s.loc)+' 치료 중';
+  return'📍 '+locName(s.loc)+(s.loc==='rest'?'':' 대기');
+}
+function vEnd(){
+  const R=report,ds=S.sat-R.sat0;
+  let h=`<div style="max-width:480px;margin:auto"><div class="win"><h3>🌙 Day ${R.day} 영업 종료</h3><table class="t">
+  <tr><td>오늘 매출</td><td>${won(R.rev)}</td></tr><tr><td>치료 완료 / 놓친 환자</td><td>${R.served}명 / ${R.lost}명</td></tr>
+  <tr><td>병원 만족도</td><td>${Math.round(S.sat)} (${ds>=0?'+':''}${ds.toFixed(1)})</td></tr><tr><td>병원 잔고</td><td>${won(S.money)}</td></tr><tr><td>다음 월급날 예상 지출</td><td style="color:#ffcf6e">${won(nextPay())} (D-${MONTH-monthDay(S.day).d+1})</td></tr></table>
+  <small>${R.lines.join('<br>')}</small>${R.quits.length?`<p style="color:#ff8a8a">${R.quits.join('<br>')}</p>`:''}</div>`;
+  if(R.pay)h+=`<div class="win"><h3>💵 월급날! (이번 달 매출 ${won(R.pay.monthRev)})</h3><table class="t">${R.pay.rows.map(x=>`<tr><td>${x.name}</td><td>−${won(x.amt)}</td></tr>`).join('')}<tr><td>합계</td><td style="color:#ff8a8a">−${won(R.pay.total)}</td></tr></table></div>`;
+  h+=`<div class="win"><h3>🛒 상점 <small>💰 ${won(S.money)}</small></h3>${shopItems().map(it=>`<div class="it"><div>${it.name}<br><small>${it.desc}</small></div><button onclick="buy('${it.k}')" ${it.done||S.money<it.cost?'disabled':''}>${it.done?'완료':won(it.cost)}</button></div>`).join('')}</div>
+  <div class="win"><h3>🧑‍⚕️ 치료사 채용 <small>매일 지원자가 바뀌어요</small></h3>
+  ${S.cands.length?S.cands.map((c,i)=>`<div class="cand"><div style="display:flex;justify-content:space-between;align-items:center"><b style="color:#ffe9a8">${c.name}</b><button onclick="hire(${i})" ${S.money<c.price?'disabled':''}>${won(c.price)}</button></div>${stLine(c.st)}</div>`).join(''):'<small>오늘 지원자는 다 뽑았어요</small>'}
+  <small>능력치 합이 높을수록 비싸요. 월급은 모두 치료 금액의 10%로 같아요.</small></div>
+  <button class="big" onclick="prepDay()">☀️ 다음 날로</button></div>`;
+  return h;
+}
+function nextPay(){return S.staff.reduce((a,s)=>a+s.earn,0)+S.monthRev*.03+S.level*1000000}
+function vOver(){return`<div style="max-width:480px;margin:auto"><h1>💸 파산…</h1><div class="win" style="text-align:center">월급과 임대료를 낼 돈이 모자라 서울그린정형외과가 문을 닫았어요.<br><small>최고 하루 매출 ${won(S.best)} · ${S.day-1}일 영업</small></div><button class="big" onclick="newGame()">다시 시작</button></div>`}
+let tt=null;function toast(m){const el=document.getElementById('toast');el.textContent=m;el.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('on'),2200)}
+
+// ================= 그래프 =================
+function drawChart(){
+  const c=document.getElementById('chart');if(!c)return;
+  const w=c.clientWidth||300,h=170;c.width=w*DPR;c.height=h*DPR;const g=c.getContext('2d');g.scale(DPR,DPR);
+  const data=S.hist.slice(-13).map(x=>({l:'D'+x.d,v:x.rev,pay:x.pay}));data.push({l:'오늘',v:D?D.rev:0,today:1});
+  const mx=Math.max(100000,...data.map(d=>d.v))*1.15,L0=34,B=h-18,T=8,bw=Math.min(34,(w-L0-6)/data.length);
+  g.font='10px Jua,sans-serif';g.fillStyle='#c3cbf0';g.strokeStyle='rgba(255,255,255,.15)';g.lineWidth=1;
+  for(let i=0;i<=3;i++){const y=B-(B-T)*i/3;g.beginPath();g.moveTo(L0,y);g.lineTo(w-4,y);g.stroke();g.fillText(man(mx*i/3).replace('.0',''),2,y+3)}
+  data.forEach((d,i)=>{const x=L0+i*bw+bw*.15,bh=(B-T)*d.v/mx;g.fillStyle=d.today?'#ffd54a':'#7fd6a4';g.fillRect(x,B-bh,bw*.7,bh);
+    if(d.pay){g.fillStyle='#ff8a8a';g.fillText('월급',x-2,T+8)}
+    if(i%2===data.length%2||d.today){g.fillStyle='#c3cbf0';g.fillText(d.l,x-2,h-4)}});
+  const note=document.getElementById('chartnote');if(note)note.textContent=`이번 달 매출 ${won(S.monthRev)} · 최고 하루 ${won(Math.max(S.best,D?D.rev:0))}`;
+}
+
+// ================= 픽셀 그리기 =================
+const DPR=Math.min(3,window.devicePixelRatio||2);
+let ctx=null;
+function px(c,x,y,w,h){ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),w,h)}
+function txt(t,x,y,c,size,al){ctx.font=(size||9)+'px Jua,sans-serif';ctx.textAlign=al||'left';ctx.fillStyle=c||'#333';ctx.fillText(t,x,y);ctx.textAlign='left'}
+function person(x,y,o,walk){
+  const bx=Math.round(x)-6,by=Math.round(y)-22,st=walk?Math.floor(walk)%2:0;
+  px('rgba(0,0,0,.18)',bx+1,by+21,10,2);
+  px(o.pants,bx+3,by+16,2,st?4:5);px(o.pants,bx+7,by+16,2,st?5:4);
+  px(o.top,bx+2,by+10,8,7);px(o.top,bx,by+11,2,5);px(o.top,bx+10,by+11,2,5);
+  px(o.skin,bx,by+15,2,2);px(o.skin,bx+10,by+15,2,2);
+  px(o.skin,bx+2,by+2,8,8);
+  px(o.hair,bx+1,by,10,3);px(o.hair,bx+1,by+3,2,3);px(o.hair,bx+9,by+3,2,3);
+  if(o.hs===1){px(o.hair,bx+1,by+6,2,5);px(o.hair,bx+9,by+6,2,5)}
+  if(o.hs===2){px(o.hair,bx+4,by-2,4,2)}
+  if(o.hs===3){px(o.hair,bx,by-1,12,3);px(o.hair,bx,by+2,2,4);px(o.hair,bx+10,by+2,2,4)}
+  px('#2b2b3a',bx+4,by+5,1,2);px('#2b2b3a',bx+7,by+5,1,2);
+  px('rgba(255,120,140,.7)',bx+3,by+7,1,1);px('rgba(255,120,140,.7)',bx+8,by+7,1,1);
+  if(o.staff){px('#fff',bx+3,by+11,2,2);px(o.staff==='mgr'?'#ffd54a':'#e57373',bx+7,by+12,2,1)}
+}
+function personS(x,y,o,w){ctx.save();ctx.translate(Math.round(x),Math.round(y));ctx.scale(1.3,1.3);person(0,0,o,w);ctx.restore()}
+function lying(x,y,o){const bx=Math.round(x)-12,by=Math.round(y)-6;px(o.skin,bx+1,by+1,6,6);px(o.hair,bx,by,3,8);px(o.top,bx+7,by,16,8);px('#bfe3ff',bx+12,by,11,8)}
+function bubble(x,y,t){
+  ctx.font='9px Jua,sans-serif';const w=Math.ceil(ctx.measureText(t).width)+10,bx=Math.max(2,Math.min(W-w-2,Math.round(x-w/2))),by=Math.round(y)-16;
+  px('#23301f',bx-1,by-1,w+2,15);px('#fff',bx,by,w,13);px('#fff',Math.round(x)-2,by+13,4,2);px('#fff',Math.round(x)-1,by+15,2,1);
+  txt(t,bx+5,by+10,'#23301f');
+}
+function plant(x,y){px('#a0714f',x,y+8,8,6);px('#4caf50',x-2,y,12,9);px('#66bb6a',x+1,y-3,6,4)}
+function drawRoomBox(x,y,w,h,label,locked,msg){
+  px('rgba(0,0,0,.06)',x+2,y+2,w-4,h-4);
+  if(label){ctx.font='9px Jua,sans-serif';const tw=ctx.measureText(label).width+8;px('rgba(30,40,90,.85)',x+3,y+3,tw,12);txt(label,x+7,y+12,'#fff')}
+  if(locked){px('rgba(40,40,50,.6)',x+2,y+16,w-4,h-18);txt(msg,x+w/2,y+h/2+8,'#fff',9,'center')}
+}
+function drawMap(){
+  const c=document.getElementById('map');if(!c)return;ctx=c.getContext('2d');ctx.setTransform(DPR,0,0,DPR,0,0);ctx.imageSmoothingEnabled=false;
+  const P=PAL[S.level-1],lv=S.level,now=performance.now();
+  for(let y=36;y<H;y+=12)for(let x=0;x<W;x+=12)px(((x+y)/12)%2?P[0]:P[1],x,y,12,12);
+  if(lv>=5){for(let y=36;y<126;y+=4)px('rgba(0,0,0,.025)',0,y,W,1)}
+  // 위쪽 벽 + 창문 + 간판
+  px(P[2],0,0,W,36);px('rgba(0,0,0,.2)',0,32,W,4);
+  const nw=2+Math.floor(lv/3);
+  for(let i=0;i<nw;i++){const wx=8+i*((W-16)/nw)+((W-16)/nw-28)/2;if(wx>W/2-80&&wx<W/2+70)continue;
+    px('#fff',wx-1,5,30,22);const sky=S.weather==='sun'?'#9fd8ff':S.weather==='rain'?'#7d8ea6':'#c9d6e3';px(sky,wx,6,28,20);
+    if(S.weather==='sun'&&i===0){px('#ffe066',wx+18,9,6,6)}
+    if(S.weather==='rain')for(let k=0;k<5;k++){const yy=6+((now/40+k*7)%18);px('#dfe9ff',wx+3+k*5,yy,1,3)}
+    if(S.weather==='snow')for(let k=0;k<5;k++){const yy=6+((now/120+k*9)%18);px('#fff',wx+3+k*5+(Math.sin(now/300+k)>0?1:0),yy,2,2)}
+    px('#fff',wx+13,6,2,20);px('#fff',wx,15,28,2)}
+  px(lv>=9?'#d4af37':'#fff',W/2-78,4,156,26);px(lv>=9?'#2e3b33':'#2f7d4f',W/2-76,6,152,22);
+  txt('서울그린정형외과',W/2,17,'#fff',12,'center');txt(LEVELS[lv-1],W/2,26,lv>=9?'#ffe9a8':'#cdeccd',8,'center');
+  // 접수/대기
+  if(lv>=6){px('#b5533c',168,48,186,74);px('#c96a50',172,52,178,66)}
+  px('#a0714f',16,66,104,14);px('#c48b5f',16,63,104,4);px('#333',96,54,14,10);px('#7ed4ff',98,56,10,6);
+  txt('접수',24,76,'#fff',9);
+  const chairC=lv>=6?'#3e5a8a':'#6fa8dc';
+  for(let j=0;j<12;j++){const cx=182+(j%4)*44,cy=62+Math.floor(j/4)*24;px(chairC,cx-8,cy-6,16,8);px('rgba(0,0,0,.25)',cx-8,cy+2,16,2)}
+  plant(4,40);plant(340,96);
+  if(lv>=2){px('#cfe8ff',140,42,10,16);px('#64b5f6',141,44,8,6)}
+  if(lv>=3){px('#222',230,38,40,6);px((Math.floor(now/800)%2)?'#6fd0ff':'#ffd27f',232,39,36,4)}
+  if(lv>=4){px('#c0392b',126,96,14,24);px('#ffe066',128,100,10,3);px('#fff',128,106,10,8)}
+  if(lv>=5){px('#2a6fb0',150,42,0,0);px('#1e5a8a',282,40,26,12);px('#7fd3ff',283,41,24,10);px('#ff9800',284+((now/60)%20),45,3,2)}
+  if(lv>=7){plant(160,98);plant(124,40)}
+  if(lv>=8){for(let i=0;i<4;i++){const lx=60+i*80;px('#ffe9a8',lx,37,6,2);px('rgba(255,240,180,.18)',lx-10,39,26,12)}}
+  if(lv>=10){px('#7fb3d5',320,46,26,18);px('#aee4ff',323,49,20,12);px('#fff',332,44+(Math.sin(now/200)>0?0:1),2,4);plant(150,40)}
+  // 벽
+  const wall=(y,gaps)=>{let x=0;for(const[a,b]of gaps){px(P[2],x,y,a-x,4);x=b}px(P[2],x,y,W-x,4)};
+  wall(124,[[150,180]]);wall(204,[[60,80],[150,170],[240,260],[330,350]]);wall(284,[[60,80],[150,170],[240,260],[330,350]]);wall(364,[[150,200]]);
+  for(const yy of[208,288])for(let k=1;k<4;k++)px(P[2],k*90-2,yy,4,76);px(P[2],178,368,4,72);
+  // 모달실
+  drawRoomBox(0,128,W,76,'모달치료실 · 전기·온열 치료');
+  const nb=beds(lv);for(let i=0;i<nb;i++){const[bx,by]=bedPos(i,nb);px('#8aa0b0',bx,by+10,24,2);px('#fff',bx,by,24,10);px('#cfe8ff',bx,by+1,6,8);px('#556',bx+8,by-10,9,7);px((Math.floor(now/500+i)%2)?'#5fd18a':'#2e7d4f',bx+10,by-8,2,2);px('#ffb74d',bx+14,by-8,2,2)}
+  // 충격파/도수
+  const sl=slots(lv);
+  for(let k=0;k<4;k++){
+    for(const kind of['shock','manual']){
+      const y0=kind==='shock'?206:286,x0=k*90,own=kind==='shock'?S.shock:S.manual,name=(kind==='shock'?'충격파 ':'도수 ')+(k+1);
+      if(k<own){
+        px('#8aa0b0',x0+36,y0+56,30,2);px(kind==='shock'?'#fff':'#7fb7a4',x0+36,y0+44,30,12);px('#cfe8ff',x0+36,y0+45,7,10);
+        if(kind==='shock'){px('#4a6fa5',x0+70,y0+30,12,18);px('#9ff',x0+72,y0+33,8,5);px('#333',x0+75,y0+48,2,6)}
+        else{px('#e3d3b5',x0+6,y0+62,20,10);px('#c9a66b',x0+70,y0+34,12,16)}
+        drawRoomBox(x0+2,y0+2,86,76,name);
+      }else drawRoomBox(x0+2,y0+2,86,76,name,true,k<sl?'🛒 상점에서 추가':'🔒 Lv.'+(3*k-2));
+    }
+  }
+  // 휴게실 / 민원 상담실
+  drawRoomBox(0,368,180,72,'휴게실');px('#a0714f',60,380,60,14);px('#c48b5f',60,378,60,3);px('#e57373',8,384,30,10);px('#fff',150,376,18,26);px('#ddd',151,377,16,10);
+  if(S.coffee){px('#5d4037',126,378,12,14);px('#fff',129,382,6,4)}
+  drawRoomBox(182,368,178,72,'민원 상담실');px('#a0714f',300,380,40,10);
+  // 엔티티
+  const ents=[];
+  for(const p of D.pats)ents.push({y:p.y,f:()=>{const ly=(p.stage==='modal'||p.stage==='msetup'||p.stage[0]==='t')&&arrived(p);
+    if(ly)lying(p.x,p.y,p.look);else personS(p.x,p.y,p.look,p.walk);
+    if(['recep','qmodal','qshock','qmanual'].includes(p.stage)){const pc=Math.max(0,p.patience/p.maxPat);px('#222',p.x-8,p.y-33,16,3);px(pc>.5?'#3fb560':pc>.25?'#f0b429':'#e5484d',p.x-8,p.y-33,Math.round(16*pc),3)}
+    if(p.stage==='exit'&&p.react)txt(p.react,p.x,p.y-30,'#000',11,'center');
+    if(p.reg&&p.stage!=='exit'&&!ly)txt('⭐',p.x+8,p.y-24,'#000',7,'center');
+    if(p.stage==='modal'&&ly){px('#222',p.x-12,p.y-12,24,2);px('#ffb74d',p.x-12,p.y-12,Math.round(24*(1-p.modalLeft/BASE.modal)),2)}
+    if(p.stage==='tshock'&&ly&&Math.floor(now/120)%2)px('#9ff',p.x-4,p.y-10,8,1);}});
+  for(const s of S.staff)ents.push({y:s.y,f:()=>{personS(s.x,s.y,{...s.look,staff:s.role},s.walk);
+    if(sel===s.id){const a=Math.floor(now/250)%2;px('#ffd54a',s.x-3,s.y-38-a,7,3);px('#ffd54a',s.x-1,s.y-35-a,3,2)}
+    if(s.task&&s.loc!=='recep'){const pr=1-s.taskLeft/s.taskTot;px('#222',s.x-8,s.y-33,16,3);px('#64b5f6',s.x-8,s.y-33,Math.round(16*pr),3)}
+    if(s.onLunch&&s.loc==='rest')txt('🍱',s.x,s.y-24,'#000',9,'center');
+    ctx.font='8px Jua,sans-serif';const tw=ctx.measureText(s.name).width+4;px('rgba(20,30,80,.75)',s.x-tw/2,s.y+1,tw,10);txt(s.name,s.x,s.y+9,s.role==='mgr'?'#ffe9a8':'#fff',8,'center');}});
+  if(D.boss){const b=D.boss;ents.push({y:b.y,f:()=>{
+    ctx.save();ctx.translate(b.x,b.y);ctx.scale(1.4,1.4);person(0,0,{skin:'#f1caa4',hair:'#1f1b1b',hs:0,top:'#8e2c2c',pants:'#333'},b.walk);ctx.restore();
+    if(Math.floor(now/300)%2)txt('💢',b.x+10,b.y-30,'#000',10);
+    px('#222',b.x-20,b.y-40,40,4);px('#e5484d',b.x-20,b.y-40,Math.round(40*Math.max(0,b.hp)/b.max),4);
+    txt(b.name+' ⏳'+Math.ceil(b.left),b.x,b.y-44,'#c0392b',8,'center')}})}
+  ents.sort((a,b)=>a.y-b.y).forEach(e=>e.f());
+  // 말풍선 / 효과
+  for(const e of[...D.pats,...S.staff,...(D.boss?[D.boss]:[])])if(e.bub&&e.bub.until>now&&e.bub.from<=now)bubble(e.x,e.y-(e===D.boss?44:34),e.bub.t);
+  D.fx=D.fx.filter(f=>f.until>now);for(const f of D.fx){const k=1-(f.until-now)/1200;ctx.globalAlpha=1-k;txt(f.t,f.x,f.y-k*14,f.c,10,'center');ctx.globalAlpha=1}
+  // 선택 시 이동 가능 영역 표시
+  const sS=S.staff.find(s=>s.id===sel);
+  if(sS){ctx.strokeStyle='rgba(255,213,74,.9)';ctx.setLineDash([4,3]);ctx.lineWidth=2;
+    const zones=[[2,38,146,86],[2,130,W-4,72],[2,370,176,68]];
+    for(let k=0;k<S.shock;k++)zones.push([k*90+3,209,84,72]);for(let k=0;k<S.manual;k++)zones.push([k*90+3,289,84,72]);
+    if(D.boss)zones.push([184,370,174,68]);
+    zones.forEach(z=>ctx.strokeRect(...z));ctx.setLineDash([])}
+  // 저녁 노을
+  if(D.t>1020){ctx.globalAlpha=Math.min(.18,(D.t-1020)/300);px('#ff8a3d',0,0,W,H);ctx.globalAlpha=1}
+  if(paused){px('rgba(10,15,40,.45)',0,0,W,H);txt('일시정지',W/2,H/2,'#fff',20,'center')}
+}
+function drawTitleArt(){
+  const c=document.getElementById('tart');if(!c)return;c.width=W*DPR;c.height=120*DPR;ctx=c.getContext('2d');ctx.setTransform(DPR,0,0,DPR,0,0);
+  for(let y=0;y<120;y+=12)for(let x=0;x<W;x+=12)px(((x+y)/12)%2?'#e9e2cf':'#ddd5bf',x,y,12,12);
+  px('#8d7b62',0,0,W,26);px('#2f7d4f',W/2-70,4,140,18);txt('서울그린정형외과',W/2,17,'#fff',11,'center');
+  px('#fff',150,70,30,12);px('#cfe8ff',150,71,7,10);lying(170,76,{skin:'#f1caa4',hair:'#d8d8d8',top:'#e57373'});
+  person(140,90,{skin:'#f8dcc0',hair:'#3b2a20',hs:1,top:'#5fb08a',pants:'#3d4b5c',staff:'pt'},0);
+  person(205,90,{skin:'#f1caa4',hair:'#1f1b1b',hs:0,top:'#6fa8dc',pants:'#3d4b5c',staff:'pt'},0);
+  person(60,100,{skin:'#f8dcc0',hair:'#5a3b28',hs:2,top:'#3e5a8a',pants:'#3d4b5c',staff:'mgr'},0);
+  person(290,100,{skin:'#e9bb92',hair:'#4a2f25',hs:3,top:'#f06292',pants:'#5b6e8c'},0);
+  bubble(140,62,'오늘도 화이팅!');plant(20,40);plant(330,40);
+}
+
+// ================= 사운드 =================
+let AC=null,soundOn=true,bgmStep=0,bgmT=0;
+function ac(){try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume()}catch(e){}return AC}
+function tone(f,d,type,v,w){if(!soundOn||!AC)return;try{const t=AC.currentTime+(w||0),o=AC.createOscillator(),g=AC.createGain();o.type=type||'square';o.frequency.value=f;g.gain.setValueAtTime(v||.05,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d+.02)}catch(e){}}
+function sfx(k){
+  if(k==='coin'){tone(988,.07);tone(1319,.12,'square',.05,.07)}
+  else if(k==='door'){tone(784,.1,'sine',.06);tone(659,.14,'sine',.06,.1)}
+  else if(k==='bad'){tone(220,.2,'sawtooth',.05);tone(165,.25,'sawtooth',.05,.18)}
+  else if(k==='boss'){[440,415,392,370].forEach((f,i)=>tone(f,.15,'sawtooth',.06,i*.15))}
+  else if(k==='win'){[523,659,784,1047].forEach((f,i)=>tone(f,.12,'square',.05,i*.1))}
+  else if(k==='chance'){[392,523,659,784,1047].forEach((f,i)=>tone(f,.1,'triangle',.07,i*.07))}
+  else if(k==='tap'){tone(1200,.03,'square',.03)}
+}
+const NT={B3:247,C4:262,D4:294,E4:330,F4:349,G4:392,A4:440,B4:494,C5:523,D5:587,E5:659,F5:698,G5:784,A5:880,C6:1047};
+const TRACKS={
+  t1:{name:'♪ 출근길 행진곡',iv:260,w:'triangle',n:'C5 E5 G5 E5 F5 A5 G5 - E5 G5 C6 G5 F5 E5 D5 -'},
+  t2:{name:'♪ 바쁜 오전',iv:200,w:'square',n:'E5 E5 G5 E5 D5 D5 F5 D5 C5 C5 E5 C5 D5 G4 B4 D5'},
+  t3:{name:'♪ 오후의 치료실',iv:280,w:'triangle',n:'A4 C5 E5 C5 G4 B4 D5 B4 F4 A4 C5 A4 G4 B4 D5 G5'},
+  t4:{name:'♪ 산책하는 어르신',iv:300,w:'sine',n:'E5 - D5 C5 D5 - E5 - G5 - E5 D5 C5 - D5 -'},
+  lunch:{name:'♪ 점심시간',iv:340,w:'sine',n:'G4 - B4 D5 - B4 A4 - F4 - A4 C5 - A4 G4 -'},
+  eve:{name:'♪ 퇴근 시간',iv:300,w:'triangle',n:'C5 - G4 - A4 - E4 - F4 - C4 - F4 G4 C5 -'},
+  boss:{name:'♪ 진상 출현!',iv:170,w:'sawtooth',n:'E4 D4 E4 - B3 - E4 F4 E4 D4 D4 - C4 - B3 -'}};
+for(const k in TRACKS)TRACKS[k].f=TRACKS[k].n.split(' ').map(x=>NT[x]||0);
+let curTrack=null,dayRot=0;
+function pickTrack(){if(D.boss)return'boss';if(D.t>=690&&D.t<810)return'lunch';if(D.t>=1000)return'eve';return['t1','t2','t3','t4'][dayRot%4]}
+function bgm(now){
+  if(!soundOn||!AC||screen!=='play'||paused||!D)return;
+  const k=pickTrack();if(k!==curTrack){curTrack=k;bgmStep=0;toast(TRACKS[k].name)}
+  const T=TRACKS[k];if(now-bgmT<T.iv)return;bgmT=now;
+  const n=T.f[bgmStep%T.f.length],soft=T.w==='square'||T.w==='sawtooth';
+  if(n)tone(n,T.iv/1000*.75,T.w,soft?.014:.024);
+  if(bgmStep%4===0)tone((n||T.f[0])/2,T.iv/1000*1.8,'triangle',.026);
+  bgmStep++;if(bgmStep%64===0&&!['boss','lunch','eve'].includes(k))dayRot++;
+}
+document.addEventListener('pointerdown',()=>ac(),{passive:true});
+
+// ================= 루프 =================
+let last=performance.now();
+function frame(now){
+  const dt=Math.min(.25,(now-last)/1000);last=now;
+  if(screen==='play'&&D){if(!paused)tick(dt*speed);if(screen==='play'){drawMap();hud();bgm(now)}}
+  requestAnimationFrame(frame);
+}
+view();requestAnimationFrame(frame);
+if('serviceWorker' in navigator&&location.protocol==='https:'){navigator.serviceWorker.register('sw.js').catch(()=>{})}
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(screen==='title')drawTitleArt()});
+</script>
+</body>
+</html>
