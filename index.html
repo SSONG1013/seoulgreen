@@ -46,7 +46,7 @@ canvas#map{width:100%;display:block;border:2px solid #fff;border-radius:6px;box-
 .sc b{font-weight:400;color:#ffe9a8}
 .bar{height:5px;background:#10153a;border-radius:3px;overflow:hidden;margin:1px 0}.bar u{display:block;height:100%}
 .cl{font-size:12px;padding:3px 0;border-bottom:1px dashed rgba(255,255,255,.2)}
-.lv0{color:#8ef0b0}.lv1{color:#c3cbf0}.lv2{color:#ffcf6e}.lv3{color:#ff8a8a}
+.lv0{color:#8ef0b0}.cl .ch{display:flex;justify-content:space-between}.cl .stars{color:#ffd54a;margin-left:4px;letter-spacing:-1px}.cl .who{color:#fff;margin-top:2px}.cl .who b{font-weight:400;color:#ffe9a8}.cl .tx{color:#e6e9ff;margin:2px 0}.cl .rp{color:#9fe0b8;font-size:11px;padding-left:6px}.cl .rb{font-size:11px;padding:1px 6px;margin-top:2px}#cmp{max-height:420px;overflow-y:auto}.lv1{color:#c3cbf0}.lv2{color:#ffcf6e}.lv3{color:#ff8a8a}
 table.t{width:100%;border-collapse:collapse;font-size:14px}table.t td{padding:3px 2px;border-bottom:1px dashed rgba(255,255,255,.2)}table.t td:last-child{text-align:right}
 .it{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,.2)}
 .it div{font-size:13px}
@@ -210,7 +210,8 @@ function spawn(){
     look={skin:pick(SKIN),top:pick(PTOP),pants:pick(['#4a4a5a','#5b6e8c','#6d5a4a']),hair:type==='old'?pick(['#d8d8d8','#bdbdbd','#eeeeee']):pick(HAIR),hs:type==='old'?2:type==='aunt'?3:r(2)};
   }
   const max=TYPES[type].pat*(S.sofa?1.2:1)*(reg?1.3:1);
-  const p={id:D.pid++,type,look,reg,stage:'recep',patience:max,maxPat:max,waited:0,skills:[],rx:[],qAt:D.t,x:-20,y:112,tx:0,ty:0,walk:0,bed:-1,bub:null,wl:0};
+  const prof=reg&&look.prof?look.prof:mkProf(type,look);look.prof=prof;
+  const p={id:D.pid++,type,look,reg,...prof,ths:[],done:[],stage:'recep',patience:max,maxPat:max,waited:0,skills:[],rx:[],qAt:D.t,x:-20,y:112,tx:0,ty:0,walk:0,bed:-1,bub:null,wl:0};
   D.pats.push(p);sfx('door');
   if(reg)bub(p,pick(['또 왔어요~ 😊','지난번에 너무 좋아서요!','단골이에요~']));else if(Math.random()<.4)bub(p,pick(L[type]));
 }
@@ -218,9 +219,53 @@ function rxFor(p){const R=TYPES[p.type].rx;p.rx=[];if(Math.random()<R.shock)p.rx
 function next(p){if(p.rx.length){p.stage='q'+p.rx[0];p.qAt=D.t}else leave(p)}
 const PRAISE=['[온라인 리뷰 ★5] 선생님들이 너무 친절해요!','[온라인 리뷰 ★5] 도수치료 받고 허리가 살았어요.','[동네 카페] 서울그린 진짜 잘해요, 추천!','[온라인 리뷰 ★4] 대기는 조금 있지만 치료는 최고.'];
 function addReg(p){S.regs.push({type:p.type,look:p.look});if(S.regs.length>30)S.regs.shift()}
+const PNAME={oldF:['순자','영자','말순','옥순','정희','명자','복례','금순'],oldM:['춘식','덕배','만수','봉길','영철','판석','병태','상구'],
+  youngF:['민지','서연','예린','수빈','지우','하은','유나','채원'],youngM:['지훈','도윤','하준','민재','현우','태민','준서','시우'],aunt:['미경','은숙','혜정','경희','선영','미숙','정애','현주']};
+const PAIN={old:['허리 디스크','무릎 관절염','오십견','척추관협착증','고관절 통증'],young:['거북목','손목 터널증후군','발목 염좌','헬스하다 다친 어깨','라운드숄더','허리 삐끗'],aunt:['허리 통증','어깨 결림','족저근막염','손목 시큰거림','무릎 시림']};
+function mkProf(type,look){
+  const f=Math.random()<.55,sur=SUR[r(SUR.length)];
+  const nm=type==='old'?pick(f?PNAME.oldF:PNAME.oldM):type==='young'?pick(f?PNAME.youngF:PNAME.youngM):pick(PNAME.aunt);
+  if(type==='old'&&!f)look.hs=0;
+  return{pname:sur+nm,age:type==='old'?ri(65,88):type==='young'?ri(20,34):ri(45,62),sex:type==='aunt'?'F':f?'F':'M',pain:pick(PAIN[type])};
+}
+const mask=n=>n[0]+'*'+n.slice(2);
+const TXN={modal:'전기치료',shock:'충격파',manual:'도수치료'};
+function pemo(p){return p.type==='old'?(p.sex==='F'?'👵':'👴'):p.type==='young'?(p.sex==='F'?'👩':'🧑'):'👩‍🦱'}
+function fill(t,p){const th=p.ths.length?p.ths[p.ths.length-1]:'담당';const tx=p.done.length?[...new Set(p.done)].map(k=>TXN[k]).join('·'):'치료';
+  return t.replace(/{t}/g,th).replace(/{w}/g,Math.max(1,Math.round(p.waited))).replace(/{tx}/g,tx).replace(/{pain}/g,p.pain).replace(/{age}/g,p.age)}
+const RV={
+  good:{all:['{pain} 때문에 왔는데 {t} 선생님이 꼼꼼하게 봐주셨어요. {tx} 받고 나니 한결 가벼워요!','대기 {w}분 정도? 생각보다 빨랐고 시설도 깔끔해요. {t} 선생님 최고👍','{t} 선생님이 집에서 하는 스트레칭까지 알려주셨어요. 이런 병원 처음이에요.'],
+    old:['우리 {t} 선생님이 손주 같아서 좋아. {pain}이 한결 낫네. 또 올게~ (손녀가 대신 씀)','나이 {age}에 이렇게 친절한 병원 처음이여. 경로당에 다 소문낼 거야.'],
+    young:['점심시간에 잠깐 와서 {tx} 받고 갑니다. {pain} 해방🙏 직장인 강추','{t} 쌤 설명 진짜 잘해주심. 운동 다시 할 수 있을 듯💪'],
+    aunt:['여기 {t} 선생님 손이 약손이에요. {pain} 때문에 고생했는데 다들 가보세요~','반찬가게 사장님 소개로 왔는데 역시! 우리 남편도 데려올게요.']},
+  bad:{all:['{t} 선생님이 바빠서 대충 해주는 느낌. {tx} 받았는데 별로 안 시원해요.','{w}분 기다려서 {tx} 받았는데 설명이 하나도 없었어요.'],
+    old:['늙은이라고 무시하나. 말을 해도 대답이 없어.','{pain} 때문에 왔는데 더 쑤셔. 다른 데 갈 거야.'],
+    young:['시간 없다고 했는데 {w}분이나 걸림. 회사 지각했습니다.','후기 보고 왔는데 실망. {pain} 그대로임.'],
+    aunt:['접수 직원이 퉁명스러워요. 동네 카페에 올릴 거예요.','{tx} 비싸기만 하고 효과는 글쎄요…']},
+  c2:{all:['접수하고 {w}분째 기다렸어요. {pain} 때문에 앉아 있기도 힘든데 안내도 없고요.','순서가 계속 밀려요. 몇 번째인지라도 알려주세요.'],
+    old:['내가 {age}살인데 이렇게 오래 기다리게 하면 쓰나.','의자가 없어서 서서 기다렸어. 노인한테 너무하네.'],
+    young:['오후 출근해야 하는데 {w}분째 대기 중입니다. 예약제 안 하나요?','{tx} 받으러 왔는데 기계는 노는데 선생님이 없어요.'],
+    aunt:['애 학원 픽업 가야 하는데 {w}분째예요! 책임지세요.','대기실이 너무 시끄럽고 복잡해요.']},
+  c3:{all:['{w}분 기다리다 그냥 나왔습니다. {pain} 더 심해진 듯.','사람만 많고 관리가 안 되는 병원. 비추합니다.'],
+    old:['손녀가 대신 씀. 할머니가 {w}분 기다리다 그냥 오셨어요. 속상하네요.'],
+    young:['리뷰 보고 왔는데 대기 지옥… {w}분 버리고 나왔습니다.'],
+    aunt:['[맘카페 공유] 서울그린 요즘 대기 너무 길대요. 참고하세요~']},
+  mdone:['전기치료 끝났는데 패드 붙인 채로 {w}분 넘게 누워 있었어요. 아무도 안 와요!']
+};
+function rvText(kind,p){const g=RV[kind];let L0=[...(g.all||[]),...(g[p.type]||[])];if(kind==='good'&&p.waited>=20)L0=L0.filter(x=>!x.includes('{w}'));return fill(pick(L0),p)}
+function logEntry(p,lv,text,stars){
+  S.complaints.unshift({day:S.day,t:hm(D.t),lv,em:pemo(p),name:p.pname,age:p.age,label:TYPES[p.type].label,reg:!!p.reg,pain:p.pain,text,stars,replied:false});
+  S.complaints=S.complaints.slice(0,60);
+}
+const REPLY={pos:['정말 감사합니다! 다음에도 정성껏 모실게요 😊','소중한 후기 감사드려요. 선생님께도 꼭 전할게요!'],neg:['불편을 드려 죄송합니다. 대기 안내를 더 신경 쓰겠습니다.','소중한 의견 감사합니다. 개선해서 더 좋은 병원이 될게요.']};
+function replyTo(i){
+  const c=S.complaints[i];if(!c||c.replied||c.lv===1)return;
+  c.replied=true;c.reply=pick(c.lv===0?REPLY.pos:REPLY.neg);
+  S.sat=Math.min(100,S.sat+(c.lv===0?.3:c.lv===2?.8:1.2));sfx('coin');toast('💬 원장님 답글을 달았어요 (만족도 +)');save();hud(true);
+}
 function review(p,bad){
-  const who=TYPES[p.type].label+' 환자',text=bad?pick(CMP3):pick(PRAISE);
-  S.complaints.unshift({day:S.day,t:hm(D.t),lv:bad?3:0,who,text});S.complaints=S.complaints.slice(0,40);
+  const who=p.pname+'('+p.age+')',stars=bad?ri(1,2):ri(4,5),text=rvText(bad?'bad':'good',p);
+  logEntry(p,bad?3:0,text,stars);
   if(bad){S.sat=Math.max(0,S.sat-3);say('【악플】',`${who}: "${text}"`);sfx('bad')}else{S.sat=Math.min(100,S.sat+1);say('【칭찬 리뷰】',`💌 ${who}: "${text}"`)}
 }
 function leave(p){
@@ -231,15 +276,15 @@ function leave(p){
   else if(s>=40){p.react='😐';bub(p,pick(['그냥 그렇네…','음… 보통이네','다음엔 다른 데 가볼까']))}
   else{S.sat-=.8*mul;p.react='😡';bub(p,pick(['다신 안 와!','리뷰 쓸 거야!','시간만 버렸네']));if(Math.random()<.35)review(p,1)}
   S.sat=Math.max(0,Math.min(100,S.sat));
-  if(Math.random()<.12&&p.bub)say(TYPES[p.type].label+' 환자',`(집에 가며) "${p.bub.t}"`);
+  if(Math.random()<.12&&p.bub)say(p.pname+' 님',`(집에 가며) "${p.bub.t}"`);
   p.stage='exit';D.served++;
 }
 function complain(p){
   const x=Math.random(),lv=x<.5?1:x<.85?2:3,mul=p.type==='aunt'?2:1;
   S.sat=Math.max(0,S.sat-[0,1,2.5,5][lv]*mul);if(lv===3)S.badDays=3;
-  const who=TYPES[p.type].label+' 환자';
-  const text=lv===1?`${who}가 기다리다 돌아갔어요.`:lv===2?pick(CMP2):pick(CMP3);
-  S.complaints.unshift({day:S.day,t:hm(D.t),lv,who,text});S.complaints=S.complaints.slice(0,40);
+  const who=p.pname+'('+p.age+')';
+  const text=lv===1?`${p.pain} 때문에 왔다가 ${Math.round(p.waited)}분 기다리고 그냥 돌아갔어요.`:p.stage==='mdone'?fill(RV.mdone[0],p):rvText(lv===2?'c2':'c3',p);
+  logEntry(p,lv,text,lv===3?ri(1,2):0);
   bub(p,pick(L.angry));say(lv===1?null:'【민원 접수】',lv===1?'😒 '+text:`${who}: "${text}"`);
   p.stage='exit';D.lost++;sfx('bad');
 }
@@ -316,7 +361,7 @@ function tick(dt){
     if(s.loc==='modal'){
       if(s.task){const p=D.pats.find(q=>q.id===s.task);if(!p||p.stage==='exit'){s.task=null;s.tk=null;continue}
         if(arrived(p)&&arrived(s)){s.taskLeft-=dt;if(s.taskLeft<=0){
-          if(s.tk==='rm'){s.task=null;s.tk=null;credit(s,'modal');addExp(s,1);p.skills.push(s.st.skill);fx(p.x,p.y-20,'+1천','#ffe9a8');sfx('coin');next(p)}
+          if(s.tk==='rm'){s.task=null;s.tk=null;credit(s,'modal');addExp(s,1);p.skills.push(s.st.skill);p.ths.push(s.name);p.done.push('modal');fx(p.x,p.y-20,'+1천','#ffe9a8');sfx('coin');next(p)}
           else{p.stage='modal';p.modalLeft=BASE.modal;s.task=null;gain(s,'modal')}}}}
       else{
         const dn=D.pats.filter(q=>q.stage==='mdone'&&!q.rmBy).sort((a,b)=>a.doneAt-b.doneAt)[0];
@@ -332,7 +377,7 @@ function tick(dt){
     if(s.loc.startsWith('shock')||s.loc.startsWith('manual')){
       const kind=s.loc.startsWith('shock')?'shock':'manual',k=roomInfo(s.loc).k;
       if(s.task){const p=D.pats.find(q=>q.id===s.task);if(!p){s.task=null;continue}
-        if(arrived(p)){s.taskLeft-=dt;if(s.taskLeft<=0){s.task=null;credit(s,kind);gain(s,kind);p.skills.push(s.st.skill);p.rx.shift();fx(p.x,p.y-30,'+'+man(PRICE[kind]),'#ffd54a');sfx('coin');if(s.curHp<maxHp(s)*.3&&Math.random()<.4)bub(s,pick(L.tired));next(p)}}}
+        if(arrived(p)){s.taskLeft-=dt;if(s.taskLeft<=0){s.task=null;credit(s,kind);gain(s,kind);p.skills.push(s.st.skill);p.ths.push(s.name);p.done.push(kind);p.rx.shift();fx(p.x,p.y-30,'+'+man(PRICE[kind]),'#ffd54a');sfx('coin');if(s.curHp<maxHp(s)*.3&&Math.random()<.4)bub(s,pick(L.tired));next(p)}}}
       else{const p=D.pats.filter(q=>q.stage==='q'+kind).sort((a,b)=>a.qAt-b.qAt)[0];
         if(p){p.stage='t'+kind;p.room=k;s.task=p.id;s.taskTot=s.taskLeft=BASE[kind]*speedF(s);if(Math.random()<.45)bub(s,pick(L.ptStart))}
         else if(auto)autoMove(s,cnt)}
@@ -355,7 +400,7 @@ function tick(dt){
   if(D.boss){
     const b=D.boss;step(b,dt);b.left-=dt;b.lineCd-=dt;if(b.lineCd<=0){b.lineCd=12;bub(b,pick(b.lines))}
     if(b.hp<=0){const bonus=100000+S.day*10000;S.money+=bonus;D.rev+=bonus;S.monthRev+=bonus;S.staff.filter(s=>s.loc==='boss').forEach(s=>addExp(s,15));say('【해결】',`🎉 「${b.name}」 진정시키기 성공! 보너스 ${won(bonus)}`);sfx('win');D.boss=null}
-    else if(b.left<=0){S.sat=Math.max(0,S.sat-6);S.badDays=3;S.complaints.unshift({day:S.day,t:hm(D.t),lv:3,who:b.name,text:'[온라인 리뷰 ★1] 이 병원 응대 최악입니다. 절대 가지 마세요.'});say('【민원 접수】',`💢 「${b.name}」이(가) 악플을 남기고 떠났어요.`);sfx('bad');D.boss=null}
+    else if(b.left<=0){S.sat=Math.max(0,S.sat-6);S.badDays=3;S.complaints.unshift({day:S.day,t:hm(D.t),lv:3,em:'😤',name:b.name,boss:1,text:'이 병원 응대 최악입니다. 원장 나오라고 해도 안 나오고! 절대 가지 마세요.',stars:1,replied:false});say('【민원 접수】',`💢 「${b.name}」이(가) 악플을 남기고 떠났어요.`);sfx('bad');D.boss=null}
   }
   for(const s of [...S.staff])if(s.stress>=100)resign(s);
   if(D.t>=DAY1)endDay();
@@ -523,8 +568,18 @@ function hud(force){
   document.getElementById('msg').innerHTML=(paused?'<span class="nm">【일시정지】</span><br>':'')+(selS?`<span class="nm">【${selS.name}】</span> 어디로 갈까요? 맵에서 방을 탭해 주세요.<br>`:'')+m.map(x=>(x.who?`<span class="nm">${x.who}</span> `:'')+x.text).join('<br>');
   document.getElementById('staffs').innerHTML=S.staff.map(s=>`<div class="sc ${sel===s.id?'sel':''}" onpointerdown="selectStaff(${s.id})"><b>${s.name}</b> <small>${s.role==='mgr'?'실장':'Lv.'+s.lv}</small><br><small>${staffStatus(s)}</small>
   ${bar(s.curHp,maxHp(s),'#5fd18a')}${bar(s.stress,100,s.stress>=70?'#ff6b6b':'#ffd54a')}</div>`).join('');
-  document.getElementById('cmp').innerHTML=S.complaints.length?S.complaints.slice(0,7).map(c=>`<div class="cl lv${c.lv}">${['💌','🚶','📝','🔥'][c.lv]} <small>D${c.day} ${c.t}</small> ${c.who}<br>${c.text}</div>`).join(''):'<small>아직 들어온 민원·리뷰가 없어요 😊</small>';
+  document.getElementById('cmp').innerHTML=S.complaints.length?S.complaints.slice(0,12).map((c,i)=>cmpRow(c,i)).join(''):'<small>아직 들어온 민원·리뷰가 없어요 😊</small>';
   drawChart();
+}
+function cmpRow(c,i){
+  const kind=['💌 칭찬 리뷰','🚶 이탈','📝 접수 민원','🔥 온라인 악플'][c.lv];
+  if(!c.name)return`<div class="cl lv${c.lv}">${kind} <small>D${c.day} ${c.t}</small><br>${c.text||''}</div>`;
+  const online=c.lv===0||c.lv===3,nm=c.boss?c.name:online?mask(c.name):c.name;
+  const info=c.boss?'진상 환자':`${c.age}세 · ${c.label}${c.reg?' · 단골⭐':''} · ${c.pain}`;
+  const st=c.stars?' '+'★'.repeat(c.stars)+'☆'.repeat(5-c.stars):'';
+  return`<div class="cl lv${c.lv}"><div class="ch"><span>${kind}<span class="stars">${st}</span></span><small>D${c.day} ${c.t}</small></div>
+  <div class="who">${c.em||''} <b>${nm}</b> <small>${info}</small></div><div class="tx">“${c.text}”</div>
+  ${c.replied?`<div class="rp">↳ 👨‍⚕️ 원장: ${c.reply}</div>`:c.lv!==1?`<button class="rb" onpointerdown="replyTo(${i})">💬 원장님 답글 달기</button>`:''}</div>`;
 }
 function locName(l){if(!l)return'';if(l==='recep')return'접수대';if(l==='rest')return'휴게실';if(l==='boss')return'민원 상담실';if(l==='modal')return'모달실';const{k}=roomInfo(l);return(l.startsWith('shock')?'충격파 ':'도수 ')+(k+1)}
 function staffStatus(s){
@@ -538,6 +593,7 @@ function vEnd(){
   const R=report,ds=S.sat-R.sat0;
   let h=`<div style="max-width:480px;margin:auto"><div class="win"><h3>🌙 Day ${R.day} 영업 종료</h3><table class="t">
   <tr><td>오늘 매출</td><td>${won(R.rev)}</td></tr><tr><td>치료 완료 / 놓친 환자</td><td>${R.served}명 / ${R.lost}명</td></tr>
+  <tr><td>오늘 리뷰 · 민원</td><td>💌 ${S.complaints.filter(c=>c.day===R.day&&c.lv===0).length} · 📝 ${S.complaints.filter(c=>c.day===R.day&&c.lv===2).length} · 🔥 ${S.complaints.filter(c=>c.day===R.day&&c.lv===3).length}</td></tr>
   <tr><td>병원 만족도</td><td>${Math.round(S.sat)} (${ds>=0?'+':''}${ds.toFixed(1)})</td></tr><tr><td>병원 잔고</td><td>${won(S.money)}</td></tr><tr><td>다음 월급날 예상 지출</td><td style="color:#ffcf6e">${won(nextPay())} (D-${MONTH-monthDay(S.day).d+1})</td></tr></table>
   <small>${R.lines.join('<br>')}</small>${R.quits.length?`<p style="color:#ff8a8a">${R.quits.join('<br>')}</p>`:''}</div>`;
   if(R.pay)h+=`<div class="win"><h3>💵 월급날! (이번 달 매출 ${won(R.pay.monthRev)})</h3><table class="t">${R.pay.rows.map(x=>`<tr><td>${x.name}</td><td>−${won(x.amt)}</td></tr>`).join('')}<tr><td>합계</td><td style="color:#ff8a8a">−${won(R.pay.total)}</td></tr></table></div>`;
